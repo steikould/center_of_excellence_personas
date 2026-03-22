@@ -26,6 +26,7 @@ Each persona follows the same structure:
 | `automation-engineer/` | Pipelines & Automation | `@automation-engineer` |
 | `process-engineer/` | Business Process Optimization | `@process-engineer` |
 | `developer/` | Software Engineering | `@developer` |
+| `ai-architect/` | AI/ML Systems Architecture | `@ai-architect` |
 | `data-scientist/` | ML & Analytics | `@data-scientist` |
 | `coop/` | Intern / Rotational | `@coop` |
 
