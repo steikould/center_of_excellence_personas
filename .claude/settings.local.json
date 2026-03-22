@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find C:/Users/mxmco/SteiKould/center_of_excellence_personas/.github/agents/senior-director* -type f)"
+    ]
+  }
+}
