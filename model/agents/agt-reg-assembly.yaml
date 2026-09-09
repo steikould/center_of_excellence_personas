@@ -1,0 +1,111 @@
+# Agent Operating Manifest (AOM) v1.0 — SEED RECORD
+id: agt-reg-assembly
+name: Regulatory Submission Assembly Agent
+shortName: Reg Assembly
+version: "1.2.0"
+status: production
+confidence: seed
+oneLiner: "Plans, assembles and technically validates eCTD/VNeeS dossiers per market, remediating mechanical validation failures automatically."
+
+provenance:
+  builtBy: "PwC"
+  deliveredOn: "2026-05-30"
+  handoverStatus: none
+  sourceAvailable: false
+  sourceLocation: "TBC — believed to live entirely in the PwC-managed agent OS workspace"
+
+platform:
+  framework: pwc-agent-os
+  frameworkVersion: "TBC"
+  runtime: rt-agentos-azure
+  orchestrationStyle: "Planner + worker; the planner derives the required section list per market"
+  interop: "MCP for all tool access"
+
+ownership:
+  businessOwner: "Director, Regulatory Operations"
+  technicalOwner: "UNASSIGNED"
+  accountableExecutive: "VP, Global Regulatory Affairs"
+
+replaces:
+  roleTitle: "Regulatory Publishing Associate"
+  fteEquivalent: 5.0
+  displacementType: task-absorption
+  retainedByHumans:
+    - "Regulatory QC review (proc-sub-qc)"
+    - "Authority transmission (proc-sub-file) — agent has no gateway access by design"
+  note: "Three contract publishing associates not renewed. Two internal associates moved to strategy roles."
+
+business:
+  domain: dom-regulatory
+  capabilities: [cap-submission]
+  processes: [proc-sub-plan, proc-sub-assemble, proc-sub-validate]
+
+model:
+  primary: "GPT-class frontier model via Azure OpenAI, private endpoint"
+  fallback: "None configured"
+  temperature: 0.2
+  promptVersioning: "TBC"
+
+interfaces:
+  systems: [sys-veeva-vault, sys-veeva-rim]
+  tools:
+    - { name: "vault-doc-retrieve", type: mcp, access: read, scope: "Approved documents only; effective versions" }
+    - { name: "rim-submission", type: mcp, access: read-write, scope: "Build and modify submission structures; cannot transmit" }
+    - { name: "ectd-validator", type: http, access: execute, scope: "Third-party validation engine" }
+  humanInLoop:
+    mode: review-after-produce
+    gate: "Regulatory QC reviews the assembled dossier before transmission"
+    slaMinutes: 2880
+    overrideRatePct: 14.8
+
+data:
+  classifications: [confidential, gxp]
+  residency: us
+  retention: "Run state 90 days; span skeletons 400 days"
+  trainingUse: prohibited
+
+telemetry:
+  emits: native-only
+  semconv: "none — vendor dashboard only"
+  collector: rt-agentos-azure
+  exportsTo: none
+  coverage:
+    traces: partial
+    metrics: partial
+    cost: none
+    toolCalls: partial
+    humanFeedback: none
+    evaluations: none
+  gaps:
+    - "This agent is NOT wired to the shared collector. Everything known about it comes from the vendor dashboard, which the CoE cannot query."
+    - "No cost attribution at all. Its share of the Azure OpenAI bill is unknown."
+    - "Highest-priority remediation in the estate."
+
+governance:
+  gxpRelevant: true
+  part11Scope: true
+  validationStatus: pending
+  validationRef: "VAL-2026-0341 (draft)"
+  periodicReview: "not scheduled"
+  modelRiskTier: 2
+  controls: [ctl-audit-trail, ctl-no-submit, ctl-payload-residency]
+  regulatoryExposure: "Direct. Output is the submission itself."
+
+economics:
+  annualRunCostUsd: 0
+  annualBenefitUsd: 1400000
+  benefitBasis: "12 days off assembly cycle time across 640 submissions, plus contract publishing spend avoided."
+  costConfidence: seed
+  benefitConfidence: seed
+
+health:
+  runsPerMonth: 53
+  successRatePct: 88.0
+  p50LatencySeconds: 1450
+  p95LatencySeconds: 6200
+  escalationRatePct: 31.0
+
+openQuestions:
+  - "Running in production against regulatory submissions with validation still in draft. Is that a knowing risk acceptance, and who signed it?"
+  - "No technical owner is assigned. Who is on call when it breaks?"
+  - "No telemetry export, no cost attribution, no evaluation. This agent is effectively unmanaged."

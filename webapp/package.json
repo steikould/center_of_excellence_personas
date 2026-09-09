@@ -1,0 +1,37 @@
+{
+  "name": "coe-agent-atlas",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "model": "node scripts/build-model.mjs",
+    "dev": "npm run model && vite",
+    "build": "npm run model && tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --force"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.11.6",
+    "d3-array": "^3.2.4",
+    "d3-hierarchy": "^3.1.2",
+    "d3-sankey": "^0.12.3",
+    "d3-scale": "^4.0.2",
+    "d3-shape": "^3.2.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/d3-array": "^3.2.2",
+    "@types/d3-hierarchy": "^3.1.7",
+    "@types/d3-sankey": "^0.12.5",
+    "@types/d3-scale": "^4.0.9",
+    "@types/d3-shape": "^3.2.0",
+    "@types/node": "^26.5.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^5.2.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "yaml": "^2.9.0"
+  }
+}

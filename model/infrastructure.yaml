@@ -1,0 +1,139 @@
+# Level 3 — IT infrastructure. Two halves:
+#   runtimes     — the federated execution footprints agents actually run in.
+#                  Each stays in its own cloud, with its own native LLMOps.
+#   controlPlane — the thin centralised layer the CoE owns. It holds the
+#                  registry, the conformed telemetry, the evaluation harness
+#                  and this atlas. It does NOT sit in any agent's request path.
+runtimes:
+  - id: rt-agentos-azure
+    name: PwC agent OS — Azure landing zone
+    cloud: azure
+    region: eastus2
+    confidence: seed
+    operator: "PwC (build) → CoE Platform Engineering (run, from 2026-Q4)"
+    summary: "Orchestration plane for the consultant-delivered agents. Runs the flow definitions, tool routing and MCP gateway."
+    compute:
+      - "AKS private cluster, 3 node pools, no public ingress"
+      - "Azure Container Apps for MCP server sidecars"
+    identity:
+      - "Entra ID workload identity per agent; one app registration per agent, no shared service principals"
+      - "Agent identities are first-class principals in the enterprise IAM review cycle"
+    network:
+      - "Private Endpoints to Vault, TrackWise and SAP; no direct internet egress from agent pods"
+      - "Egress via Azure Firewall with FQDN allowlist"
+    data:
+      - "Azure AI Search (vector) — grounding index over Vault-sourced documents only"
+      - "Cosmos DB — conversation and run state, 90-day TTL"
+      - "No GxP source data is copied; grounding index stores pointers plus extracted text"
+    secrets:
+      - "Azure Key Vault, per-agent access policy, 90-day rotation"
+    telemetry:
+      native: "agent OS governance dashboard — session tracking, execution history, per-step latency and cost, human-in-the-loop feedback"
+      wire: "OpenTelemetry traces (gen_ai.* semantic conventions)"
+      redactionPoint: "OTel Collector inside the AKS cluster — prompt/response bodies are hashed and replaced with a payload reference before any span leaves the landing zone"
+      exportsTo: cp-otel
+    gxpBoundary: true
+    hosts: [agt-pv-intake, agt-batch-review, agt-reg-assembly]
+
+  - id: rt-copilot-studio
+    name: Microsoft Copilot Studio — Power Platform managed environment
+    cloud: azure
+    region: eastus2
+    confidence: seed
+    operator: "Digital Workplace"
+    summary: "Low-code agents delivered in the Microsoft 365 surface. Where business users build, and where the medical information agent is consumed."
+    compute:
+      - "Power Platform managed environment (Dataverse-backed), DLP policy enforced"
+    identity:
+      - "Entra ID; agent runs on-behalf-of the invoking user for Graph-scoped reads"
+    network:
+      - "Power Platform virtual network integration to reach Salesforce and Vault connectors privately"
+    data:
+      - "Dataverse — conversation transcripts, 180-day retention"
+      - "Knowledge grounded on a SharePoint mirror of the approved standard-response library"
+    secrets:
+      - "Power Platform connection references + Key Vault-backed environment variables"
+    telemetry:
+      native: "Copilot Studio analytics + environment-level agent telemetry export"
+      wire: "OpenTelemetry-aligned spans exported to Azure Application Insights (agent invocation, tool call and message spans)"
+      redactionPoint: "Application Insights ingestion-time transformation KQL — strips message bodies, keeps span skeleton, tool identity, latency, tokens"
+      exportsTo: cp-otel
+    gxpBoundary: false
+    hosts: [agt-medinfo]
+
+  - id: rt-dify-onprem
+    name: Dify — on-premises Kubernetes
+    cloud: on-prem
+    region: "DC-Kalamazoo"
+    confidence: seed
+    operator: "Data & Analytics Engineering"
+    summary: "Self-hosted LLM app platform used where data residency or GxP boundary rules forbid vendor-cloud processing."
+    compute:
+      - "OpenShift cluster, dedicated namespace per app"
+      - "Model serving via internal vLLM gateway plus brokered Azure OpenAI for frontier calls"
+    identity:
+      - "Internal OIDC provider federated to Entra ID; per-app service accounts"
+    network:
+      - "No internet egress. Frontier model calls proxied through the enterprise AI gateway with payload logging disabled."
+    data:
+      - "PostgreSQL + Weaviate in-cluster; all vectors derived from on-prem sources"
+    secrets:
+      - "HashiCorp Vault, Kubernetes auth method"
+    telemetry:
+      native: "Dify tracing → self-hosted Langfuse"
+      wire: "OTLP from the Langfuse/OTel collector pair; one tracing backend per workflow app is a Dify limitation, so the collector is the fan-out point"
+      redactionPoint: "OTel Collector in-cluster — attribute processor drops gen_ai.*.content before export"
+      exportsTo: cp-otel
+    gxpBoundary: true
+    hosts: [agt-supplier-triage]
+
+controlPlane:
+  - id: cp-registry
+    name: Agent Registry
+    layer: governance
+    summary: "The system of record for what agents exist. Stores one Agent Operating Manifest per agent, version-controlled in this repository and mirrored to the deployment platform."
+    implementation: "model/agents/*.yaml in git → validated by CI → published to the enterprise deployment platform as the intake artifact"
+    ownedBy: "AI Center of Excellence"
+    inRequestPath: false
+
+  - id: cp-otel
+    name: Conformed Telemetry Pipeline
+    layer: observability
+    summary: "A central OTLP endpoint that accepts already-redacted spans from every runtime's local collector, normalises them to a single schema, and lands them in the warehouse."
+    implementation: "OpenTelemetry Collector (gateway mode) → Azure Data Explorer. Enforces the gen_ai.* semantic conventions; rejects spans missing agent.id, run.id or a payload reference."
+    ownedBy: "CoE Platform Engineering"
+    inRequestPath: false
+    note: "Receives telemetry only. It never proxies an agent call, so it cannot take an agent down."
+
+  - id: cp-warehouse
+    name: Agent Operations Warehouse
+    layer: observability
+    summary: "Query surface over conformed runs: cost, latency, escalation rate, override rate, per-process throughput. The numbers behind this atlas."
+    implementation: "Azure Data Explorer; 400-day retention on span skeletons, 30-day on payload references"
+    ownedBy: "CoE Platform Engineering"
+    inRequestPath: false
+
+  - id: cp-eval
+    name: Central Evaluation & Scorecard
+    layer: assurance
+    summary: "One evaluation harness for every agent regardless of framework. Golden sets, regression gates, drift detection and the periodic review evidence GxP validation depends on."
+    implementation: "Scheduled jobs that call each agent through its own public interface, score against a versioned golden set, and write scores back as gen_ai.evaluation.* spans"
+    ownedBy: "AI Center of Excellence + Quality Assurance"
+    inRequestPath: false
+    note: "This is the one thing deliberately NOT federated. A vendor grading its own homework is not evidence."
+
+  - id: cp-policy
+    name: Policy & Guardrail Baseline
+    layer: governance
+    summary: "The controls every agent must satisfy, expressed once and verified per runtime. Not a runtime proxy — a conformance contract checked in CI and audited from telemetry."
+    implementation: "Policy set in the deployment platform; per-runtime attestation; CI check against the manifest"
+    ownedBy: "AI Governance Board"
+    inRequestPath: false
+
+  - id: cp-atlas
+    name: Agent Atlas (this application)
+    layer: experience
+    summary: "The executive-to-infrastructure view. Reads the registry and the warehouse; writes nothing."
+    implementation: "Static React application; model compiled from model/*.yaml, live metrics fetched from cp-warehouse"
+    ownedBy: "AI Center of Excellence"
+    inRequestPath: false

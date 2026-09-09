@@ -1,0 +1,66 @@
+# Governance controls. Each control is asserted once and verified per runtime.
+# `verification` says how conformance is actually proven — a control nobody can
+# evidence from telemetry or CI is a policy statement, not a control.
+controls:
+  - id: ctl-hitl
+    name: Human approval before commit
+    category: operational
+    statement: "An agent may draft a regulated record but a qualified human commits it."
+    verification: "Telemetry — every write span to a GxP system must be preceded by an approval span carrying an approver identity. Enforced by a warehouse assertion, alerted on breach."
+    regulatoryBasis: ["GxP", "21 CFR Part 11 §11.10(d)"]
+
+  - id: ctl-audit-trail
+    name: Attributable, contemporaneous audit trail
+    category: compliance
+    statement: "Every agent action against a regulated system is attributable to a named agent identity and reconstructable after the fact."
+    verification: "Agent runs on a dedicated workload identity; run id is written into the target system's audit field; span skeleton retained 400 days."
+    regulatoryBasis: ["21 CFR Part 11 §11.10(e)", "ALCOA+"]
+
+  - id: ctl-no-submit
+    name: No autonomous regulatory transmission
+    category: architectural
+    statement: "No agent holds credentials to the regulatory gateway. Transmission is a human-authorised act."
+    verification: "IAM — the gateway's access policy contains no agent principals. Verified in the quarterly access review and by a CI check against the manifest."
+    regulatoryBasis: ["GxP"]
+
+  - id: ctl-no-disposition
+    name: No autonomous lot disposition
+    category: architectural
+    statement: "Lot release remains with the designated QA signatory. Agents may recommend, never dispose."
+    verification: "SAP authorisation object excludes agent principals; disposition spans carry a human actor or the assertion fails."
+    regulatoryBasis: ["EU GMP Annex 16", "GxP"]
+
+  - id: ctl-eval-gate
+    name: Evaluation gate before promotion
+    category: assurance
+    statement: "No agent version reaches production without passing the central golden-set evaluation at or above its registered threshold."
+    verification: "Deployment platform blocks promotion on a failing cp-eval score. Scores are written back as evaluation spans."
+    regulatoryBasis: ["Model risk framework"]
+
+  - id: ctl-payload-residency
+    name: Payload stays in the regulated boundary
+    category: architectural
+    statement: "Prompt and response bodies containing GxP or personal data never leave the runtime that produced them. Only redacted span skeletons and payload references are exported."
+    verification: "Collector configuration is code-reviewed; the central pipeline rejects any span carrying gen_ai content attributes."
+    regulatoryBasis: ["GDPR", "Data classification policy"]
+
+  - id: ctl-degraded-mode
+    name: Defined degraded mode
+    category: operational
+    statement: "Every agent has a defined behaviour when its model is unavailable, and that behaviour fails closed to a human."
+    verification: "Declared in the manifest and exercised in the annual continuity test."
+    regulatoryBasis: ["Business continuity policy"]
+
+  - id: ctl-label-boundary
+    name: Approved-label boundary
+    category: compliance
+    statement: "Externally facing agents answer only from approved, effective, version-controlled content and refuse to compose beyond it."
+    verification: "Every externally facing answer span carries the source document id and version. Answers without a source are blocked and counted."
+    regulatoryBasis: ["Promotional compliance", "SOP-MI-014"]
+
+  - id: ctl-ae-detection
+    name: Adverse event detection and handoff
+    category: compliance
+    statement: "Any agent in contact with customers must detect a possible adverse event and route it to pharmacovigilance within the regulatory clock."
+    verification: "Recall measured monthly against a human-labelled sample; handoff latency measured from the interaction span."
+    regulatoryBasis: ["Pharmacovigilance obligations"]

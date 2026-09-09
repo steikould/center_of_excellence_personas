@@ -1,0 +1,114 @@
+# Agent Operating Manifest (AOM) v1.0
+# SEED RECORD — every `confidence: seed` value is illustrative and must be
+# replaced with the delivered agent's real configuration before use.
+id: agt-pv-intake
+name: Pharmacovigilance Case Intake Agent
+shortName: PV Intake
+version: "2.1.0"
+status: production
+confidence: seed
+oneLiner: "Receives, deduplicates, validates and drafts veterinary adverse event cases up to the point of medical assessment."
+
+provenance:
+  builtBy: "PwC"
+  deliveredOn: "2026-03-02"
+  handoverStatus: partial
+  sourceAvailable: true
+  sourceLocation: "TBC — confirm whether flow definitions, prompts and eval sets were delivered as artefacts or live only in the agent OS workspace"
+
+platform:
+  framework: pwc-agent-os
+  frameworkVersion: "TBC"
+  runtime: rt-agentos-azure
+  orchestrationStyle: "Deterministic flow with LLM steps; not free-running ReAct"
+  interop: "MCP for all tool access"
+
+ownership:
+  businessOwner: "Head of Global PV Operations"
+  technicalOwner: "CoE Platform Engineering"
+  accountableExecutive: "VP, Global Animal Health Safety"
+
+replaces:
+  roleTitle: "Pharmacovigilance Case Intake Specialist"
+  fteEquivalent: 3.5
+  displacementType: task-absorption
+  retainedByHumans:
+    - "Medical assessment and causality (proc-ae-medreview)"
+    - "Final case approval before regulatory submission"
+  note: "Headcount moved to case investigation and signal detection rather than being cut. Confirm before repeating this claim externally."
+
+business:
+  domain: dom-safety
+  capabilities: [cap-ae-intake]
+  processes: [proc-ae-receive, proc-ae-dedupe, proc-ae-validity, proc-ae-serious, proc-ae-narrative]
+
+model:
+  primary: "GPT-class frontier model via Azure OpenAI, private endpoint"
+  fallback: "Same family, previous version, pinned"
+  temperature: 0.1
+  promptVersioning: "TBC — confirm prompts are versioned artefacts, not console state"
+
+interfaces:
+  systems: [sys-argus, sys-servicenow, sys-m365, sys-veeva-vault]
+  tools:
+    - { name: "argus-case-api", type: mcp, access: read-write, scope: "Create and update draft cases only; cannot submit" }
+    - { name: "vault-rsi-search", type: mcp, access: read, scope: "Reference safety information for expectedness" }
+    - { name: "graph-mail", type: mcp, access: read, scope: "Designated PV intake mailbox only" }
+    - { name: "literature-feed", type: http, access: read, scope: "Licensed abstract feed" }
+  humanInLoop:
+    mode: approve-before-commit
+    gate: "Safety physician confirms validity, seriousness and narrative before the case advances"
+    slaMinutes: 240
+    overrideRatePct: 6.4
+
+data:
+  classifications: [restricted, gxp, personal-data]
+  residency: us
+  retention: "Run state 90 days; span skeletons 400 days; payload bodies never leave the landing zone"
+  trainingUse: prohibited
+
+telemetry:
+  emits: otel
+  semconv: "gen_ai.* (experimental)"
+  collector: rt-agentos-azure
+  exportsTo: cp-otel
+  coverage:
+    traces: full
+    metrics: full
+    cost: full
+    toolCalls: full
+    humanFeedback: partial
+    evaluations: none
+  gaps:
+    - "Human override reason codes are captured in the agent OS UI but not emitted as span attributes — the single most valuable signal is stranded in the vendor dashboard"
+    - "No offline evaluation runs. Quality is inferred from override rate only."
+
+governance:
+  gxpRelevant: true
+  part11Scope: true
+  validationStatus: validated
+  validationRef: "VAL-2026-0113"
+  periodicReview: "2026-09-30"
+  modelRiskTier: 2
+  controls: [ctl-hitl, ctl-audit-trail, ctl-no-submit, ctl-eval-gate, ctl-payload-residency]
+  regulatoryExposure: "Direct. Output becomes part of a regulatory submission of record."
+
+economics:
+  annualRunCostUsd: 214000
+  annualBenefitUsd: 890000
+  benefitBasis: "Avoided contract intake capacity plus backlog reduction. Not a headcount reduction."
+  costConfidence: declared
+  benefitConfidence: seed
+
+health:
+  runsPerMonth: 4100
+  successRatePct: 96.8
+  p50LatencySeconds: 42
+  p95LatencySeconds: 310
+  escalationRatePct: 11.2
+
+openQuestions:
+  - "Are the flow definitions, prompts and tool schemas exportable as version-controlled artefacts, or does the configuration live only in the agent OS workspace?"
+  - "What happens to this agent when the PwC engagement ends — who holds the runbook?"
+  - "Is there a golden evaluation set from the build phase, and was it delivered?"
+  - "Does the validation package (VAL-2026-0113) cover model version changes, or does every model update reopen validation?"

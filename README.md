@@ -9,6 +9,41 @@ This repo is the operating system for our AI Center of Excellence at a large ani
 
 ---
 
+## Two things live here
+
+This repo carries two related workstreams. They share a knowledge base and a set of
+schemas, and they feed each other.
+
+### 1. Persona journeys — how people learn and contribute
+
+Team members pick a role, work through guided Copilot modules, and produce structured
+knowledge artifacts as a side effect. Everything below this section describes that.
+
+### 2. Agent operations — how the agents we deploy are governed
+
+We now run agents that perform work people used to perform, built on several different
+frameworks and running in several different clouds. That estate needs an inventory, a
+telemetry contract, and a view that a CEO and an SRE can read on the same day.
+
+| | |
+|---|---|
+| **[`docs/agent-operations/`](docs/agent-operations/README.md)** | The operating model: what the consultant-built agents are probably running on, why we federate runtimes rather than building one harness, and what the CoE actually builds |
+| **[`model/`](model/README.md)** | The source of truth — business domains, capabilities, processes, agent manifests, systems, runtimes, controls and flows, all in reviewable YAML |
+| **[`webapp/`](webapp/README.md)** | The **Agent Atlas** — one interactive document read at four depths, from executive portfolio down to network egress rules |
+| **[Agent Operating Manifest schema](knowledge-base/_schema/agent-manifest.schema.md)** | The framework-neutral record every agent registers with, and the intake artifact for the enterprise deployment platform |
+| **[ADR-001](knowledge-base/decisions/ADR-001-federated-agent-telemetry.md) · [ADR-002](knowledge-base/decisions/ADR-002-agent-operating-manifest.md)** | The two decisions the above rests on |
+
+```bash
+cd webapp && npm install && npm run dev
+```
+
+> The model ships as **seed data** — the structure is real, the values are illustrative
+> placeholders. Every record carries a confidence marker and the atlas renders it, so
+> nothing unverified can quietly pass as fact. Start with the handover checks in
+> `docs/agent-operations/`.
+
+---
+
 ## Getting Started
 
 **Requirements:**
@@ -89,10 +124,25 @@ Every persona goes through **8 shared modules** (learning Copilot while producin
 │       ├── journey.md                 ← Progress tracker
 │       └── workspace/                 ← Prompts, agents, artifacts
 │
-└── exercises/                         ← Hands-on exercises by type
-    ├── shared/                        ← Knowledge extraction exercises
-    ├── technical/                     ← For dev/data-sci/automation
-    └── strategic/                     ← For director/PM/architect
+├── exercises/                         ← Hands-on exercises by type
+│   ├── shared/                        ← Knowledge extraction exercises
+│   ├── technical/                     ← For dev/data-sci/automation
+│   └── strategic/                     ← For director/PM/architect
+│
+├── docs/agent-operations/             ← Operating model for the agent estate
+│
+├── model/                             ← Source of truth for the Agent Atlas (YAML)
+│   ├── domains.yaml                   ← Business domains (level 0)
+│   ├── capabilities.yaml              ← Capabilities & process steps (levels 1–2)
+│   ├── agents/                        ← One Agent Operating Manifest per agent
+│   ├── systems.yaml                   ← Systems of record
+│   ├── infrastructure.yaml            ← Runtimes & control plane (level 3)
+│   ├── flows.yaml                     ← Integration topology
+│   └── controls.yaml                  ← Governance controls
+│
+└── webapp/                            ← Agent Atlas — the interactive document
+    ├── scripts/build-model.mjs        ← Compiles + validates model/ → model.json
+    └── src/                           ← React + TypeScript
 ```
 
 ---
@@ -108,6 +158,8 @@ This repo is **Phase 1** of an enterprise AI brain:
 | **3 — Real-Time Graph** | Platform entries become nodes, connections become edges, best practices become properties in a live graph database spanning the organization. | Future |
 
 Every artifact you produce here follows a schema designed for future graph ingestion. You're not just learning Copilot — you're building the foundation of how this company understands its own AI operations.
+
+The [Agent Atlas](webapp/README.md) is a working slice of the Phase 3 idea running today: the same nodes and edges — platforms, agents, processes, decisions, controls — rendered against a validated model in git rather than waiting on a graph database. When the graph lands, the model compiles into it instead of into JSON.
 
 ---
 
