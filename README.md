@@ -129,10 +129,25 @@ Every persona goes through **8 shared modules** (learning Copilot while producin
 │   ├── technical/                     ← For dev/data-sci/automation
 │   └── strategic/                     ← For director/PM/architect
 │
-└── app/                               ← Enterprise Map web application
-    ├── index.html                     ← Business ⇄ IT navigator (no build step)
-    ├── data/                          ← The model as portable JSON (nodes + edges)
-    └── tools/                         ← Seed generator and verification harness
+├── app/                               ← Enterprise Map web application
+│   ├── index.html                     ← Business ⇄ IT navigator (no build step)
+│   ├── data/                          ← The model as portable JSON (nodes + edges)
+│   └── tools/                         ← Seed generator and verification harness
+│
+├── docs/agent-operations/             ← Operating model for the agent estate
+│
+├── model/                             ← Agent Atlas source of truth (YAML)
+│   ├── domains.yaml                   ← Business domains (level 0)
+│   ├── capabilities.yaml              ← Capabilities & process steps (levels 1–2)
+│   ├── agents/                        ← One Agent Operating Manifest per agent
+│   ├── systems.yaml                   ← Systems of record
+│   ├── infrastructure.yaml            ← Runtimes & control plane (level 3)
+│   ├── flows.yaml                     ← Integration topology
+│   └── controls.yaml                  ← Governance controls
+│
+└── webapp/                            ← Agent Atlas — the agent estate document
+    ├── scripts/build-model.mjs        ← Compiles + validates model/ → model.json
+    └── src/                           ← React + TypeScript
 ```
 
 ---
