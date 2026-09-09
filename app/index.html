@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enterprise Map - Business and IT</title>
+<meta name="description" content="Navigate the organisation as two linked hierarchies: what the business does, and the technology that makes it run.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🗺️</text></svg>">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body data-lens="business">
+<a class="skip-link" href="#view">Skip to main content</a>
+
+<header class="app-header">
+  <a class="brand" href="#/" aria-label="Enterprise Map home">
+    <span class="brand-mark" aria-hidden="true">EM</span>
+    <span class="brand-text">
+      <strong>Enterprise Map</strong>
+      <small id="model-name">loading model&hellip;</small>
+    </span>
+  </a>
+
+  <form class="searchbox" id="searchform" role="search">
+    <label class="sr-only" for="search">Search the business and IT model</label>
+    <input type="search" id="search" name="q" placeholder="Search capabilities, processes, applications, servers&hellip;"
+           autocomplete="off" spellcheck="false">
+    <button type="submit">Search</button>
+  </form>
+
+  <nav class="top-nav" aria-label="Views">
+    <a href="#/" data-nav="map">Map</a>
+    <a href="#/matrix" data-nav="matrix">Matrix</a>
+    <a href="#/quality" data-nav="quality">Data quality</a>
+    <a href="#/model" data-nav="model">Model</a>
+  </nav>
+
+  <label class="role-picker">
+    <span class="sr-only">Your role</span>
+    <select id="role">
+      <option value="viewer">Viewer</option>
+      <option value="editor">Editor</option>
+      <option value="admin">Admin</option>
+    </select>
+  </label>
+</header>
+
+<div class="context-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb"><ol id="breadcrumb"></ol></nav>
+  <div class="context-actions">
+    <div class="lens-switch" role="group" aria-label="Switch lens">
+      <button type="button" id="lens-business" data-lens-target="business">
+        <span aria-hidden="true">◧</span> Business
+      </button>
+      <button type="button" id="lens-it" data-lens-target="it">
+        <span aria-hidden="true">◨</span> IT
+      </button>
+    </div>
+    <button type="button" class="ghost" id="btn-dual" title="Show business and IT side by side">Dual pane</button>
+    <button type="button" class="ghost" id="btn-details" aria-expanded="false" aria-controls="inspector"
+            title="Show details, relationships and editing for what is open">Details</button>
+    <button type="button" class="ghost" id="btn-filters" aria-expanded="false" aria-controls="filters">Filters</button>
+  </div>
+</div>
+
+<div class="app-body">
+  <aside class="filters" id="filters" hidden>
+    <h2>Filters &amp; overlay</h2>
+    <div class="filter-group">
+      <label for="overlay">Colour tiles by</label>
+      <select id="overlay">
+        <option value="health">Health</option>
+        <option value="maturity">Maturity</option>
+        <option value="apps">Supporting applications</option>
+        <option value="risk">Technical risk</option>
+        <option value="cost">Cost band</option>
+        <option value="none">Nothing</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-owner">Owner contains</label>
+      <input type="text" id="filter-owner" placeholder="e.g. Quality">
+    </div>
+    <fieldset class="filter-group" data-filter="health">
+      <legend>Health</legend>
+      <label><input type="checkbox" value="ok"> Healthy</label>
+      <label><input type="checkbox" value="watch"> Watch</label>
+      <label><input type="checkbox" value="at-risk"> At risk</label>
+      <label><input type="checkbox" value="unknown"> Unknown</label>
+    </fieldset>
+    <fieldset class="filter-group" data-filter="lifecycle">
+      <legend>Lifecycle</legend>
+      <label><input type="checkbox" value="plan"> Plan</label>
+      <label><input type="checkbox" value="active"> Active</label>
+      <label><input type="checkbox" value="phase-out"> Phase out</label>
+      <label><input type="checkbox" value="retired"> Retired</label>
+    </fieldset>
+    <fieldset class="filter-group" data-filter="criticality">
+      <legend>Criticality</legend>
+      <label><input type="checkbox" value="critical"> Critical</label>
+      <label><input type="checkbox" value="high"> High</label>
+      <label><input type="checkbox" value="medium"> Medium</label>
+      <label><input type="checkbox" value="low"> Low</label>
+    </fieldset>
+    <fieldset class="filter-group" data-filter="environment">
+      <legend>Environment</legend>
+      <label><input type="checkbox" value="production"> Production</label>
+      <label><input type="checkbox" value="validation"> Validation / UAT</label>
+      <label><input type="checkbox" value="development"> Development</label>
+    </fieldset>
+    <button type="button" class="ghost" id="clear-filters">Clear all filters</button>
+  </aside>
+
+  <main id="view" tabindex="-1" aria-live="polite"></main>
+
+  <aside class="inspector" id="inspector" hidden aria-label="Selected item"></aside>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module" src="js/main.js"></script>
+<noscript><p style="padding:2rem">This application needs JavaScript to render the model.</p></noscript>
+</body>
+</html>
