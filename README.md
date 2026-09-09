@@ -129,21 +129,34 @@ Every persona goes through **8 shared modules** (learning Copilot while producin
 │   ├── technical/                     ← For dev/data-sci/automation
 │   └── strategic/                     ← For director/PM/architect
 │
-├── docs/agent-operations/             ← Operating model for the agent estate
-│
-├── model/                             ← Source of truth for the Agent Atlas (YAML)
-│   ├── domains.yaml                   ← Business domains (level 0)
-│   ├── capabilities.yaml              ← Capabilities & process steps (levels 1–2)
-│   ├── agents/                        ← One Agent Operating Manifest per agent
-│   ├── systems.yaml                   ← Systems of record
-│   ├── infrastructure.yaml            ← Runtimes & control plane (level 3)
-│   ├── flows.yaml                     ← Integration topology
-│   └── controls.yaml                  ← Governance controls
-│
-└── webapp/                            ← Agent Atlas — the interactive document
-    ├── scripts/build-model.mjs        ← Compiles + validates model/ → model.json
-    └── src/                           ← React + TypeScript
+└── app/                               ← Enterprise Map web application
+    ├── index.html                     ← Business ⇄ IT navigator (no build step)
+    ├── data/                          ← The model as portable JSON (nodes + edges)
+    └── tools/                         ← Seed generator and verification harness
 ```
+
+---
+
+## The Enterprise Map App
+
+`app/` is a working web application that renders the organization as **two linked hierarchies** —
+a business view and an IT view — and lets you pivot between them. It is the interactive form of
+what the knowledge base captures in Markdown, and a preview of the Phase 3 graph.
+
+```bash
+python3 -m http.server 8000 --directory app   # then open http://localhost:8000/
+node app/tools/verify.mjs                     # check the model and the acceptance criteria
+```
+
+Start at the domain map, drill down to a process, then flip the lens to see the systems behind it —
+or go the other way and ask which business processes stop if a database fails. It ships with a
+realistic demo model (10 domains, 43 capabilities, 130 processes, 68 applications, ~400 IT elements)
+including the redundant systems and unsupported capabilities that make the analysis views worth
+opening.
+
+The model imports and exports as two plain JSON files, so entries from `knowledge-base/platforms/`
+and `knowledge-base/connections/` can be turned into nodes and edges as the knowledge base fills up.
+See [`app/README.md`](app/README.md) and [`app/data/README.md`](app/data/README.md).
 
 ---
 
