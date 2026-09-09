@@ -1,0 +1,100 @@
+# Level 0 — Business domains. This is the executive landing view.
+# `valueAtStake` is the annual operating cost of the domain's in-scope work
+# (people + systems + vendor spend) in USD. It sizes the treemap.
+domains:
+  - id: dom-safety
+    name: Pharmacovigilance & Product Safety
+    shortName: Safety
+    owner: VP, Global Animal Health Safety
+    confidence: seed
+    summary: >
+      Collects, triages, assesses and reports adverse events for veterinary products
+      to FDA CVM, EMA and ~40 national authorities. Regulated end to end; every
+      output is a submission of record.
+    valueAtStake: 14200000
+    outcome: "Report every reportable event, on time, defensibly."
+    pressures:
+      - "15-day expedited reporting clocks with no tolerance for miss"
+      - "Case volume up 31% YoY; headcount flat"
+      - "Multilingual intake from field vets, distributors and call centres"
+    kpis:
+      - { id: kpi-safety-ontime, label: "On-time expedited submissions", value: 99.2, unit: "%", target: 100, direction: up }
+      - { id: kpi-safety-tat, label: "Median case turnaround", value: 4.1, unit: "days", target: 3.0, direction: down }
+      - { id: kpi-safety-backlog, label: "Open case backlog", value: 612, unit: "cases", target: 300, direction: down }
+
+  - id: dom-quality
+    name: Manufacturing Quality & Batch Release
+    shortName: Quality
+    owner: VP, Global Quality
+    confidence: seed
+    summary: >
+      Reviews executed batch records, dispositions lots, and manages deviations
+      and CAPAs across three GMP manufacturing sites. The critical path between
+      "product made" and "product sellable".
+    valueAtStake: 21800000
+    outcome: "Release conforming product without holding inventory hostage to review queues."
+    pressures:
+      - "Right-first-time batch record review sits at 68%"
+      - "Average 9 days of finished goods held awaiting QA review"
+      - "Reviewer attrition; 14 months to train a fully qualified reviewer"
+    kpis:
+      - { id: kpi-quality-rft, label: "Batch record right-first-time", value: 68, unit: "%", target: 90, direction: up }
+      - { id: kpi-quality-hold, label: "Days inventory held for review", value: 9.0, unit: "days", target: 3.0, direction: down }
+      - { id: kpi-quality-capa, label: "CAPAs past due", value: 47, unit: "records", target: 0, direction: down }
+
+  - id: dom-regulatory
+    name: Regulatory Affairs & Submissions
+    shortName: Regulatory
+    owner: VP, Global Regulatory Affairs
+    confidence: seed
+    summary: >
+      Assembles, validates and publishes eCTD/VNeeS submissions and lifecycle
+      variations across global markets. Highly procedural, document-heavy, and
+      a chronic bottleneck to launch dates.
+    valueAtStake: 9600000
+    outcome: "Move approval dates left without creating a compliance finding."
+    pressures:
+      - "Each market has divergent dossier formats and validation rules"
+      - "Publishing associates spend ~60% of time on mechanical assembly"
+      - "Variation volume grows with every additional SKU and market"
+    kpis:
+      - { id: kpi-reg-cycle, label: "Submission assembly cycle time", value: 22, unit: "days", target: 10, direction: down }
+      - { id: kpi-reg-valid, label: "First-pass validation rate", value: 81, unit: "%", target: 97, direction: up }
+      - { id: kpi-reg-queue, label: "Variations in queue", value: 134, unit: "filings", target: 60, direction: down }
+
+  - id: dom-supply
+    name: Supply Chain & Supplier Quality
+    shortName: Supply
+    owner: VP, Supply Chain
+    confidence: seed
+    summary: >
+      Qualifies suppliers, triages incoming-material nonconformances, and manages
+      supplier CAPA. Sits between procurement systems and the quality system, and
+      is where most manual reconciliation happens.
+    valueAtStake: 7400000
+    outcome: "Keep qualified material flowing; catch supplier drift before it reaches a batch."
+    pressures:
+      - "Supplier nonconformance triage is fully manual and email-driven"
+      - "Single-source APIs with no early warning on supplier quality drift"
+    kpis:
+      - { id: kpi-supply-triage, label: "NCR triage time", value: 6.5, unit: "days", target: 2.0, direction: down }
+      - { id: kpi-supply-qual, label: "Suppliers current on qualification", value: 88, unit: "%", target: 99, direction: up }
+
+  - id: dom-commercial
+    name: Commercial & Veterinary Medical Information
+    shortName: Commercial
+    owner: VP, Commercial Operations
+    confidence: seed
+    summary: >
+      Answers unsolicited medical and technical questions from veterinarians,
+      distributors and producers. Regulated speech — every response must stay
+      within approved label and be logged.
+    valueAtStake: 5100000
+    outcome: "Answer the vet correctly, within label, in minutes not days."
+    pressures:
+      - "72% of inbound inquiries are repeat questions already answered"
+      - "Response SLA missed on 1 in 5 inquiries during seasonal peaks"
+      - "Any off-label statement is a regulatory event"
+    kpis:
+      - { id: kpi-comm-sla, label: "Inquiries answered within SLA", value: 79, unit: "%", target: 95, direction: up }
+      - { id: kpi-comm-first, label: "First-contact resolution", value: 54, unit: "%", target: 80, direction: up }

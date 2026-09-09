@@ -1,0 +1,20 @@
+# Agent Atlas — model metadata
+# The model/ directory is the SOURCE OF TRUTH for the Agent Atlas webapp.
+# It is plain YAML so it can be reviewed in a pull request, edited by a human,
+# or written by an agent. `npm run model` compiles and validates it into
+# webapp/public/model.json.
+schemaVersion: "1.0.0"
+organization: "Animal Health — AI Center of Excellence"
+asOf: "2026-09-09"
+
+# Every record carries a confidence marker. Nothing in this seed model has been
+# confirmed against the real estate yet, so it all ships as `seed`.
+#   seed      — illustrative placeholder authored by the CoE, NOT verified
+#   declared  — asserted by the owning team, not yet evidenced
+#   evidenced — backed by telemetry, a config export, or a signed manifest
+confidenceLevels: [seed, declared, evidenced]
+
+disclaimer: >
+  The five agents in model/agents/ are SEED RECORDS. They encode the shape of the
+  inventory, not its contents. Replace every field marked `confidence: seed` with
+  values taken from the delivered agents before this atlas is shown outside the CoE.

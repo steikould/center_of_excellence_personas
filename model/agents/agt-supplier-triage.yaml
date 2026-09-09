@@ -1,0 +1,108 @@
+# Agent Operating Manifest (AOM) v1.0 — SEED RECORD
+id: agt-supplier-triage
+name: Supplier Nonconformance Triage Agent
+shortName: Supplier Triage
+version: "0.9.1"
+status: pilot
+confidence: seed
+oneLiner: "Triages incoming-material nonconformances, traces affected lots into consuming batches, and drafts supplier CAPA requests."
+
+provenance:
+  builtBy: "Internal — Data & Analytics Engineering"
+  deliveredOn: "2026-06-11"
+  handoverStatus: n/a
+  sourceAvailable: true
+  sourceLocation: "Internal GitLab, dify-apps/supplier-triage"
+
+platform:
+  framework: dify
+  frameworkVersion: "1.x self-hosted"
+  runtime: rt-dify-onprem
+  orchestrationStyle: "Dify workflow — nodes for retrieval, classification, trace and draft"
+  interop: "HTTP tool nodes; no MCP"
+
+ownership:
+  businessOwner: "Director, Supplier Quality"
+  technicalOwner: "Data & Analytics Engineering"
+  accountableExecutive: "VP, Supply Chain"
+
+replaces:
+  roleTitle: "Supplier Quality Analyst (triage portion)"
+  fteEquivalent: 2.5
+  displacementType: task-absorption
+  retainedByHumans:
+    - "Supplier requalification decision (proc-ncr-qualify)"
+    - "Any nonconformance touching a released lot"
+
+business:
+  domain: dom-supply
+  capabilities: [cap-supplier-quality]
+  processes: [proc-ncr-intake, proc-ncr-impact, proc-ncr-supplier]
+
+model:
+  primary: "Internally hosted open-weight model via vLLM gateway"
+  fallback: "Brokered frontier model through the enterprise AI gateway, payload logging disabled"
+  temperature: 0.1
+  promptVersioning: "Git — prompts are files in the repository"
+
+interfaces:
+  systems: [sys-sap, sys-trackwise, sys-mes, sys-labware, sys-m365]
+  tools:
+    - { name: "sap-material-trace", type: http, access: read, scope: "Batch genealogy" }
+    - { name: "trackwise-ncr", type: http, access: read-write, scope: "Create draft NCR and supplier CAPA records" }
+    - { name: "smtp-supplier-notify", type: http, access: write, scope: "Draft only — never sends without approval" }
+  humanInLoop:
+    mode: approve-before-commit
+    gate: "Supplier quality analyst approves impact assessment and any outbound supplier communication"
+    slaMinutes: 960
+    overrideRatePct: 18.2
+
+data:
+  classifications: [confidential, gxp]
+  residency: us-onprem
+  retention: "Traces 180 days in self-hosted Langfuse"
+  trainingUse: "Permitted on internal data with DPIA on file"
+
+telemetry:
+  emits: otel
+  semconv: "gen_ai.* via Langfuse OTLP"
+  collector: rt-dify-onprem
+  exportsTo: cp-otel
+  coverage:
+    traces: full
+    metrics: partial
+    cost: partial
+    toolCalls: full
+    humanFeedback: full
+    evaluations: partial
+  gaps:
+    - "Dify supports one tracing backend per workflow app, so the collector must fan out rather than the app"
+    - "Token cost for the internally hosted model is modelled, not metered"
+
+governance:
+  gxpRelevant: true
+  part11Scope: false
+  validationStatus: not-required
+  validationRef: "Pilot under QA-approved non-GxP scope; becomes GxP if it writes to a released lot"
+  periodicReview: "2026-12-01"
+  modelRiskTier: 3
+  controls: [ctl-hitl, ctl-audit-trail, ctl-eval-gate]
+  regulatoryExposure: "Indirect. Drafts only; a human commits every quality record."
+
+economics:
+  annualRunCostUsd: 62000
+  annualBenefitUsd: 410000
+  benefitBasis: "Triage time from 6.5 days to under 1; avoided expedite freight on misclassified material."
+  costConfidence: evidenced
+  benefitConfidence: seed
+
+health:
+  runsPerMonth: 285
+  successRatePct: 94.1
+  p50LatencySeconds: 95
+  p95LatencySeconds: 520
+  escalationRatePct: 16.4
+
+openQuestions:
+  - "Pilot exit criteria are not written down. What has to be true to promote this to production?"
+  - "If it starts touching released lots it becomes GxP overnight. Is there a tripwire for that?"
