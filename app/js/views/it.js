@@ -61,16 +61,29 @@ export function renderITView(model, anchor, params) {
 
     <p class="lede">${LEVEL_BLURB[level]}</p>
 
-    ${level === "T1" ? renderLandscape(model, nodes) : renderLevel(model, nodes, level)}
+    ${level === "T1" ? renderLandscape(model, nodes, scope.T3 || []) : renderLevel(model, nodes, level)}
   `;
 }
 
-function renderLandscape(model, nodes) {
+function renderLandscape(model, nodes, integrationLevel) {
   const apps = nodes.filter((n) => n.type === "Application");
   const external = nodes.filter((n) => n.type === "ExternalService" && n.level === "T1");
   const byLifecycle = (a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name);
   const critical = apps.filter((a) => a.criticality === "critical").length;
   const risky = apps.filter((a) => a.health === "at-risk" || a.lifecycle === "phase-out");
+
+  // The landscape is applications, external services AND the integrations
+  // between them - a system list without its wiring is only half the picture.
+  const inScope = new Set([...apps, ...external].map((n) => n.id));
+  const flows = integrationLevel
+    .filter((n) => n.type === "IntegrationFlow")
+    .map((flow) => ({ flow, ...endpointsOf(model, flow) }))
+    .filter(({ source, target }) => (source && inScope.has(source.id)) || (target && inScope.has(target.id)))
+    .sort((a, b) => a.flow.name.localeCompare(b.flow.name));
+  const flowLabel = new Map(flows.map(({ flow, source, target }) => [flow.id,
+    `${source ? source.name : "?"} → ${target ? target.name : "?"}`
+    + (flow.props?.protocol ? ` · ${flow.props.protocol}` : "")
+    + (flow.props?.frequency ? ` · ${flow.props.frequency}` : "")]));
 
   return tpl`
     <div class="impact-summary">
@@ -78,6 +91,7 @@ function renderLandscape(model, nodes) {
       ${statTile(critical, "Business critical")}
       ${statTile(risky.length, "At risk or phasing out", risky.length ? "risk" : "")}
       ${statTile(external.length, "External services")}
+      ${statTile(flows.length, "Integrations between them")}
     </div>
     ${risky.length ? tpl`<p class="notice">
       ${risky.map((a) => a.name).join(", ")} ${risky.length === 1 ? "is" : "are"} at risk or being phased out.
@@ -86,7 +100,19 @@ function renderLandscape(model, nodes) {
       emptyMessage: "No application supports this scope yet.",
     }))}
     ${external.length ? section("External services", external.length, rows(model, external)) : ""}
+    ${flows.length
+      ? section("Integrations", flows.length, rows(model, flows.map((f) => f.flow), {
+          sub: (flow) => flowLabel.get(flow.id) || flow.description,
+        }))
+      : ""}
   `;
+}
+
+/** The applications either side of an integration flow. */
+function endpointsOf(model, flow) {
+  const source = model.in(flow.id).find((e) => e.type === "connects_to");
+  const target = model.out(flow.id).find((e) => e.type === "connects_to");
+  return { source: source ? model.node(source.from) : null, target: target ? model.node(target.to) : null };
 }
 
 function rank(app) {

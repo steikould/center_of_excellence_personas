@@ -178,5 +178,19 @@ console.log(`${model.nodes.size} nodes, ${model.edges.size} relationships\n`);
     `${(performance.now() - t1).toFixed(0)} ms for 130 rows x 67 columns`);
 }
 
+/* --- Lazy rendering keeps large models workable --------------------------- */
+{
+  const { ROW_PAGE } = await import("../js/views/common.js");
+  check("9. Long lists are paged rather than rendered whole", ROW_PAGE > 0 && ROW_PAGE <= 100,
+    `${ROW_PAGE} rows per batch`);
+
+  const matrixSource = await readFile(join(HERE, "..", "js", "views", "matrix.js"), "utf8");
+  const budget = Number(matrixSource.match(/const CELL_BUDGET = (\d+)/)?.[1]);
+  const mx = model.matrix("B3");
+  check("9b. The demo model sits inside the matrix cell budget, so it never pages",
+    budget > 0 && mx.rows.length * mx.applications.length <= budget,
+    `${(mx.rows.length * mx.applications.length).toLocaleString()} cells against a budget of ${budget.toLocaleString()}`);
+}
+
 console.log(`\n${failures === 0 ? "All checks passed." : `${failures} check(s) failed.`}\n`);
 process.exit(failures === 0 ? 0 : 1);

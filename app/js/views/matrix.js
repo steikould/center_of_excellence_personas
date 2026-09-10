@@ -6,12 +6,41 @@ import { tpl, raw, plural } from "../util.js";
 import { statTile } from "./common.js";
 import { LEVEL_LABELS } from "../model.js";
 
+/**
+ * A matrix is inherently two-dimensional, so it is the one view that can blow
+ * up: 540 processes against 420 applications is 226,800 cells, and building
+ * that many table cells is what makes a large model feel broken. Beyond a cell
+ * budget the rows page, and the columns narrow to the applications that appear
+ * on the page. The redundancy and gap counts are still computed over every row,
+ * so the headline findings never depend on which page you are looking at.
+ */
+const CELL_BUDGET = 12000;
+const ROWS_PER_PAGE = 40;
+
 export function renderMatrix(model, params) {
   const level = ["B2", "B3"].includes(params.get("level")) ? params.get("level") : "B2";
   const scopeId = params.get("scope") && model.has(params.get("scope")) ? params.get("scope") : null;
-  const { rows: matrixRows, applications, cells, redundant, gaps } = model.matrix(level, scopeId);
+  const { rows: allRows, applications: allApplications, cells, redundant, gaps } = model.matrix(level, scopeId);
   const domains = model.ofLevel("B1")
     .sort((a, b) => (a.code || "").localeCompare(b.code || "", undefined, { numeric: true }));
+
+  const paged = allRows.length * allApplications.length > CELL_BUDGET;
+  // Columns can never exceed the full application set, so sizing the page
+  // against that bound keeps every page inside the budget in the worst case.
+  const rowsPerPage = Math.max(10, Math.min(ROWS_PER_PAGE,
+    Math.floor(CELL_BUDGET / Math.max(1, allApplications.length))));
+  const pageCount = paged ? Math.ceil(allRows.length / rowsPerPage) : 1;
+  const page = Math.min(Math.max(1, Number(params.get("page")) || 1), pageCount);
+  const matrixRows = paged
+    ? allRows.slice((page - 1) * rowsPerPage, page * rowsPerPage)
+    : allRows;
+  const applications = paged
+    ? (() => {
+        const onPage = new Set();
+        for (const r of matrixRows) for (const c of cells.get(r.id)) onPage.add(c.app.id);
+        return allApplications.filter((a) => onPage.has(a.id));
+      })()
+    : allApplications;
 
   const head = applications.map((app) => tpl`
     <th scope="col" title="${app.name} · ${app.lifecycle}">
@@ -71,11 +100,20 @@ export function renderMatrix(model, params) {
     </div>
 
     <div class="impact-summary">
-      ${statTile(matrixRows.length, LEVEL_LABELS[level] + " rows")}
-      ${statTile(applications.length, "Applications")}
+      ${statTile(allRows.length, LEVEL_LABELS[level] + " rows")}
+      ${statTile(allApplications.length, "Applications")}
       ${statTile(redundant.length, "Rows with overlapping applications", redundant.length ? "risk" : "")}
       ${statTile(gaps.length, "Rows with no application", gaps.length ? "risk" : "")}
     </div>
+
+    ${paged ? tpl`<div class="matrix-paging">
+      <button type="button" class="ghost" data-matrix-page="${page - 1}" ${page <= 1 ? raw("disabled") : ""}>← Previous</button>
+      <span class="count">Rows ${(page - 1) * rowsPerPage + 1}–${Math.min(page * rowsPerPage, allRows.length)}
+        of ${allRows.length}, page ${page} of ${pageCount}</span>
+      <button type="button" class="ghost" data-matrix-page="${page + 1}" ${page >= pageCount ? raw("disabled") : ""}>Next →</button>
+      <span class="count">Columns show the ${applications.length} applications appearing on this page.
+        Narrow the scope above to see the whole grid at once.</span>
+    </div>` : ""}
 
     <p class="matrix-legend">
       <span><span class="badge badge-business">●</span> supported directly</span>
