@@ -1,0 +1,120 @@
+# Agent Operating Manifest (AOM) v1.0 — SEED RECORD
+id: agt-batch-review
+name: Batch Record Review Agent
+shortName: Batch Review
+version: "1.4.2"
+status: production
+confidence: seed
+oneLiner: "Performs completeness, data-integrity and specification-conformance review of executed batch records, and drafts deviations for exceptions."
+
+provenance:
+  builtBy: "PwC"
+  deliveredOn: "2026-04-18"
+  handoverStatus: partial
+  sourceAvailable: true
+  sourceLocation: "TBC"
+
+platform:
+  framework: pwc-agent-os
+  frameworkVersion: "TBC"
+  runtime: rt-agentos-azure
+  orchestrationStyle: "Deterministic checklist execution with LLM adjudication per check"
+  interop: "MCP for all tool access"
+
+ownership:
+  businessOwner: "Director, QA Operations"
+  technicalOwner: "CoE Platform Engineering"
+  accountableExecutive: "VP, Global Quality"
+
+replaces:
+  roleTitle: "QA Batch Record Reviewer (Level I–II)"
+  fteEquivalent: 7.0
+  displacementType: task-absorption
+  retainedByHumans:
+    - "Lot disposition decision — never delegated"
+    - "Root cause investigation on any exception the agent classifies as major or critical"
+  note: "Level I–II review absorbed. Level III reviewers redeployed to investigation. Confirm the attrition assumption with HR before publishing."
+
+business:
+  domain: bd-manufacture-ensure-quality
+  capabilities: [cap-quality-assurance-compliance]
+  processes:
+    - id: proc-batch-release-disposition
+      cycleBeforeMinutes: 600
+      cycleAfterMinutes: 125
+      cycleUnit: "per batch"
+    - id: proc-deviation-management
+      cycleBeforeMinutes: 330
+      cycleAfterMinutes: 95
+      cycleUnit: "per deviation"
+
+model:
+  primary: "GPT-class frontier model via Azure OpenAI, private endpoint"
+  fallback: "Deterministic rules-only mode — the agent degrades to mechanical checks and escalates everything else"
+  temperature: 0.0
+  promptVersioning: "TBC"
+
+interfaces:
+  systems: [app-prodline-mes, app-labcore-lims, app-qualisphere-qms, app-auriga-erp, app-releasedesk, app-edms-docuvault]
+  tools:
+    - { name: "prodline-batch-record", type: mcp, access: read, scope: "Per-site; three separate connections" }
+    - { name: "labcore-results", type: mcp, access: read, scope: "Results and specifications" }
+    - { name: "qualisphere-deviation", type: mcp, access: read-write, scope: "Create draft deviations; cannot close or approve" }
+    - { name: "auriga-batch-master", type: mcp, access: read, scope: "Batch and material master" }
+    - { name: "docuvault-attachments", type: mcp, access: read, scope: "Batch record attachments; effective versions only" }
+  humanInLoop:
+    mode: approve-before-commit
+    gate: "QA reviewer accepts or overrides every exception classification; disposition always human"
+    slaMinutes: 480
+    overrideRatePct: 9.1
+
+data:
+  classifications: [restricted, gxp]
+  residency: us
+  retention: "Run state 90 days; span skeletons 400 days"
+  trainingUse: prohibited
+
+telemetry:
+  emits: otel
+  semconv: "gen_ai.* (experimental)"
+  collector: rt-agentos-azure
+  exportsTo: cp-otel
+  coverage:
+    traces: full
+    metrics: full
+    cost: full
+    toolCalls: full
+    humanFeedback: partial
+    evaluations: none
+  gaps:
+    - "Per-check outcomes are not individually spanned — a failed review shows as one span, so you cannot tell which of the 140 checks is degrading"
+    - "Scanned attachments pulled from DocuVault are silently skipped when OCR fails; no span event is emitted for the skip, so the gap is invisible in the telemetry"
+
+governance:
+  gxpRelevant: true
+  part11Scope: true
+  validationStatus: validated
+  validationRef: "VAL-2026-0208"
+  periodicReview: "2026-10-15"
+  modelRiskTier: 1
+  controls: [ctl-hitl, ctl-audit-trail, ctl-no-disposition, ctl-eval-gate, ctl-degraded-mode]
+  regulatoryExposure: "Direct and severe. A missed review finding is a potential FDA observation."
+
+economics:
+  annualRunCostUsd: 340000
+  annualBenefitUsd: 2600000
+  benefitBasis: "Six days of released working capital plus avoided review capacity."
+  costConfidence: declared
+  benefitConfidence: seed
+
+health:
+  runsPerMonth: 440
+  successRatePct: 91.3
+  p50LatencySeconds: 380
+  p95LatencySeconds: 2100
+  escalationRatePct: 22.7
+
+openQuestions:
+  - "The DocuVault OCR gap caps this agent's coverage on older batches. Was that flagged at handover, and is it in anyone's backlog?"
+  - "Per-site MES integrations were built three times. Is there a consolidation plan or is this now permanent?"
+  - "8.7% of runs fail. What is the failure taxonomy and who watches it?"

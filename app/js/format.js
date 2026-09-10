@@ -30,6 +30,7 @@ export const TYPE_ICON = {
   DataStore: "⌸", Interface: "⇄", IntegrationFlow: "⟶",
   PlatformService: "⚙", Environment: "▤", Host: "☐", Cluster: "⊞",
   NetworkZone: "⬡", Site: "⚑",
+  Agent: "◈", AgentRuntime: "▩",
 };
 
 export const TYPE_LABEL = {
@@ -38,6 +39,7 @@ export const TYPE_LABEL = {
   DataStore: "Data store", Interface: "Interface", IntegrationFlow: "Integration flow",
   PlatformService: "Platform service", Environment: "Environment", Host: "Host",
   Cluster: "Cluster", NetworkZone: "Network zone", Site: "Site / region",
+  Agent: "AI agent", AgentRuntime: "Agent runtime",
 };
 
 export const TYPE_LABEL_PLURAL = {
@@ -46,6 +48,7 @@ export const TYPE_LABEL_PLURAL = {
   DataStore: "Data stores", Interface: "Interfaces", IntegrationFlow: "Integration flows",
   PlatformService: "Platform services", Environment: "Environments", Host: "Hosts",
   Cluster: "Clusters", NetworkZone: "Network zones", Site: "Sites and regions",
+  Agent: "AI agents", AgentRuntime: "Agent runtimes",
 };
 
 export const EDGE_LABEL = {
@@ -118,4 +121,83 @@ export function overlayMetric(node, overlay, context = {}) {
     case "cost": return context.cost ? `Cost band ${context.cost}` : "Cost band not recorded";
     default: return "";
   }
+}
+
+
+/* ------------------------------------------------------------------ agents */
+
+export const FRAMEWORK_LABEL = {
+  "pwc-agent-os": "PwC agent OS",
+  "copilot-studio": "Microsoft Copilot Studio",
+  dify: "Dify (self-hosted)",
+  "bedrock-agentcore": "Bedrock AgentCore",
+  langgraph: "LangGraph",
+  custom: "Custom",
+};
+
+/** Coverage of one telemetry signal. Ordinal, not categorical: none < partial
+ *  < full is an ordering, so it reads as one ramp rather than three colours. */
+export const COVERAGE = {
+  full: { label: "full", tone: "ok", glyph: "●" },
+  partial: { label: "partial", tone: "watch", glyph: "◐" },
+  none: { label: "none", tone: "risk", glyph: "○" },
+};
+
+export const SEVERITY = {
+  critical: { label: "Critical", tone: "risk", glyph: "■" },
+  serious: { label: "At risk", tone: "risk", glyph: "▲" },
+  warning: { label: "Watch", tone: "watch", glyph: "!" },
+};
+
+/** How confident the model is in a value. Rendered everywhere a seed number is
+ *  shown, so a placeholder can never quietly read as an inventory fact. */
+export const CONFIDENCE = {
+  seed: { label: "Seed - not yet verified", short: "seed" },
+  declared: { label: "Declared, not evidenced", short: "declared" },
+  evidenced: { label: "Evidenced", short: "evidenced" },
+};
+
+export function coverageBadge(value) {
+  const c = COVERAGE[value] || COVERAGE.none;
+  return tpl`<span class="badge badge-${c.tone}" title="Telemetry coverage: ${c.label}"><span class="glyph" aria-hidden="true">${c.glyph}</span>${c.label}</span>`;
+}
+
+export function severityBadge(severity) {
+  const s = SEVERITY[severity] || SEVERITY.warning;
+  return tpl`<span class="badge badge-${s.tone}"><span class="glyph" aria-hidden="true">${s.glyph}</span>${s.label}</span>`;
+}
+
+export function confidenceBadge(value) {
+  if (!value || value === "evidenced") return raw("");
+  const c = CONFIDENCE[value] || CONFIDENCE.seed;
+  return tpl`<span class="badge badge-seed" title="${c.label}">${c.label}</span>`;
+}
+
+export function frameworkBadge(framework) {
+  return tpl`<span class="badge badge-neutral" data-framework="${framework}">
+    <span class="glyph" aria-hidden="true">◈</span>${FRAMEWORK_LABEL[framework] || framework}</span>`;
+}
+
+export function usd(value) {
+  const n = Number(value) || 0;
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return `${n < 0 ? "-" : ""}$${(abs / 1e6).toFixed(abs >= 1e7 ? 0 : 1)}M`;
+  if (abs >= 1e3) return `${n < 0 ? "-" : ""}$${Math.round(abs / 1e3)}k`;
+  return `${n < 0 ? "-" : ""}$${Math.round(abs)}`;
+}
+
+/** Minutes rendered at whatever unit reads naturally at that magnitude. */
+export function duration(minutes) {
+  const m = Number(minutes) || 0;
+  if (m < 60) return `${Math.round(m)} min`;
+  if (m < 60 * 16) return `${(m / 60).toFixed(m < 600 ? 1 : 0)} hr`;
+  return `${(m / (60 * 8)).toFixed(1)} days`;
+}
+
+/** Latency in whatever unit keeps it a two-digit number. */
+export function seconds(value) {
+  const s = Number(value) || 0;
+  if (s < 90) return `${Math.round(s)}s`;
+  if (s < 5400) return `${(s / 60).toFixed(s < 600 ? 1 : 0)} min`;
+  return `${(s / 3600).toFixed(1)} hr`;
 }

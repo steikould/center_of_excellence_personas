@@ -1,0 +1,117 @@
+# Agent Operating Manifest (AOM) v1.0 — SEED RECORD
+id: agt-medinfo
+name: Veterinary Medical Information Agent
+shortName: Med Info
+version: "3.0.1"
+status: production
+confidence: seed
+oneLiner: "Answers veterinarian and producer product questions strictly from the approved standard-response library, and forwards any possible adverse event to safety."
+
+provenance:
+  builtBy: "PwC (v1) → Digital Workplace (v2–v3)"
+  deliveredOn: "2025-11-14"
+  handoverStatus: complete
+  sourceAvailable: true
+  sourceLocation: "Power Platform solution, exported to internal GitLab on each release"
+
+platform:
+  framework: copilot-studio
+  frameworkVersion: "current"
+  runtime: rt-copilot-studio
+  orchestrationStyle: "Topic-driven with generative answers constrained to a curated knowledge source"
+  interop: "Power Platform connectors"
+
+ownership:
+  businessOwner: "Head of Veterinary Medical Information"
+  technicalOwner: "Digital Workplace"
+  accountableExecutive: "VP, Commercial Operations"
+
+replaces:
+  roleTitle: "Medical Information Specialist (tier-1 response)"
+  fteEquivalent: 8.0
+  displacementType: channel-shift
+  retainedByHumans:
+    - "Any inquiry not answerable from the approved library"
+    - "Authoring and approval of new standard responses"
+  note: "Largest displacement in the estate and the most externally visible. Every answer is regulated speech."
+
+business:
+  domain: bd-acquire-serve-customers
+  capabilities: [cap-customer-support-veterinary-services]
+  processes:
+    - id: proc-case-intake-triage
+      cycleBeforeMinutes: 15
+      cycleAfterMinutes: 2
+      cycleUnit: "per inquiry"
+    - id: proc-technical-product-support
+      cycleBeforeMinutes: 45
+      cycleAfterMinutes: 6
+      cycleUnit: "per inquiry"
+
+model:
+  primary: "Copilot Studio managed model"
+  fallback: "Deflect to human queue"
+  temperature: "not exposed"
+  promptVersioning: "Solution-versioned; instructions travel with the Power Platform solution export"
+
+interfaces:
+  systems: [app-vetsupport-desk, app-vetconnect-crm, app-edms-docuvault, app-safetyvault]
+  tools:
+    - { name: "docuvault-srl", type: connector, access: read, scope: "Mirror of the approved standard-response library" }
+    - { name: "vetconnect-case", type: connector, access: read-write, scope: "Create and update medical information cases" }
+    - { name: "safetyvault-handoff", type: connector, access: write, scope: "Create a PV intake record for any suspected adverse event" }
+  humanInLoop:
+    mode: autonomous-with-escalation
+    gate: "Answers from the library go out unreviewed. Anything off-library escalates to a specialist."
+    slaMinutes: 0
+    overrideRatePct: 3.1
+
+data:
+  classifications: [confidential, personal-data]
+  residency: us
+  retention: "Dataverse transcripts 180 days"
+  trainingUse: prohibited
+
+telemetry:
+  emits: appinsights-otel
+  semconv: "OpenTelemetry-aligned spans via Copilot Studio environment telemetry export"
+  collector: rt-copilot-studio
+  exportsTo: cp-otel
+  coverage:
+    traces: full
+    metrics: full
+    cost: partial
+    toolCalls: full
+    humanFeedback: full
+    evaluations: full
+  gaps:
+    - "Copilot Studio message-level cost is reported in Copilot Credits, not tokens — cost comparison against the other four agents requires a conversion assumption"
+    - "Best-instrumented agent in the estate. Use it as the reference implementation."
+
+governance:
+  gxpRelevant: false
+  part11Scope: false
+  validationStatus: not-required
+  validationRef: "Promotional/medical review under SOP-MI-014"
+  periodicReview: "2026-11-01"
+  modelRiskTier: 2
+  controls: [ctl-audit-trail, ctl-label-boundary, ctl-ae-detection, ctl-eval-gate]
+  regulatoryExposure: "High but indirect. Off-label statement is a regulatory event even though no submission is produced."
+
+economics:
+  annualRunCostUsd: 155000
+  annualBenefitUsd: 1180000
+  benefitBasis: "Tier-1 deflection at 71% of inquiry volume; SLA recovery during seasonal peaks."
+  costConfidence: declared
+  benefitConfidence: declared
+
+health:
+  runsPerMonth: 5900
+  successRatePct: 97.9
+  p50LatencySeconds: 6
+  p95LatencySeconds: 24
+  escalationRatePct: 28.6
+
+openQuestions:
+  - "Autonomous answering is the only unreviewed agent output reaching an external audience. Is the AE-detection recall measured, and against what?"
+  - "Copilot Credit to token conversion needs an agreed factor before cost comparisons across frameworks mean anything."

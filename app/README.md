@@ -44,6 +44,49 @@ To regenerate the demo dataset after editing the seed files:
 python3 app/tools/generate_seed.py
 ```
 
+That last command also projects the **agent registry** in [`../model/`](../model/README.md) into
+the graph. Requires PyYAML.
+
+---
+
+## Agents
+
+Agents that now perform work people used to perform are not a separate application. They are nodes
+in this graph:
+
+| | Level | Why there |
+|---|---|---|
+| `Agent` | T1 — application & service landscape | An agent is a service that supports business steps. Beside the applications, the lens pivot, technology chain, impact analysis and search all work on it with no special cases. |
+| `AgentRuntime` | T4 — platform & runtime | It is one. Runtimes then run on the clusters, hosts and sites already in the model. |
+
+So *"which business processes stop if the agent runtime fails?"* is the ordinary impact-analysis
+question, and *"what does a machine now do in pharmacovigilance?"* is the ordinary lens pivot.
+
+Two distinctions are deliberate:
+
+- **An agent is a supporting service, but not an application.** Redundancy, coverage gaps and the
+  capability matrix all mean *application* specifically, so `applicationsFor` and `agentsFor` are
+  kept apart rather than conflated. Blurring them would silently distort the matrix.
+- **Telemetry reaches the control plane by `integrates_with`, never `depends_on`.** The graph does
+  not treat an integration as a dependency, so impact analysis from the conformed telemetry pipeline
+  reaches zero business processes — which is what makes the claim that the centre is out of every
+  agent's request path checkable instead of merely asserted. `verify.mjs` asserts it.
+
+An agent's `health` is derived from its manifest by rule, never authored: one carrying a critical
+finding — no technical owner, or GxP production without completed validation — cannot render green.
+
+### Charts
+
+There are two, and the difference between them is the point. At estate level the steps are measured
+in seven different units — per case, per batch, per submission, per inquiry — so their absolute times
+share no axis and the chart shows **proportional** change on a fixed 0–100% scale. On a single agent,
+where the unit is usually constant, a before/after dumbbell on a shared **absolute** axis is honest
+and more informative.
+
+Both follow the same rule as the rest of the map: colour is never the only signal. Marks differ by
+shape as well as fill, every row prints its own value, and the table behind the picture is one
+click away with the unit named.
+
 ---
 
 ## What you can do
@@ -58,6 +101,7 @@ python3 app/tools/generate_seed.py
 | Business and technology side by side, with hover linking | `#/dual/{id}` |
 | Capability-to-application matrix — redundancy and gaps | `#/matrix?level=B3` |
 | Search both lenses at once | `#/search?q=cold+chain` |
+| The agent estate: what a machine now does, and whether it is governed | `#/agents` |
 | What the model itself is getting wrong | `#/quality` |
 | Import, export, round-trip check and the change log | `#/model` |
 

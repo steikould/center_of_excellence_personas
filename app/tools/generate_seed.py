@@ -18,6 +18,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from seed_business import DOMAINS, ACTIVITIES          # noqa: E402
 from seed_apps import APPS                             # noqa: E402
+from seed_agents import build_agents                   # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.normpath(os.path.join(HERE, "..", "data"))
@@ -585,7 +586,11 @@ def write(path, payload):
 
 
 def main():
+    # The agent layer is projected from model/*.yaml last, so it binds to
+    # business processes and applications that already exist.
+    agent_problems = build_agents(add_node, add_edge, lambda nid: nid in nodes)
     problems, orphans = validate()
+    problems = agent_problems + problems
     if problems:
         for p in problems:
             print("MODEL ERROR:", p)

@@ -67,6 +67,7 @@ export function renderITView(model, anchor, params) {
 
 function renderLandscape(model, nodes, integrationLevel) {
   const apps = nodes.filter((n) => n.type === "Application");
+  const agents = nodes.filter((n) => n.type === "Agent");
   const external = nodes.filter((n) => n.type === "ExternalService" && n.level === "T1");
   const byLifecycle = (a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name);
   const critical = apps.filter((a) => a.criticality === "critical").length;
@@ -96,6 +97,10 @@ function renderLandscape(model, nodes, integrationLevel) {
     ${risky.length ? tpl`<p class="notice">
       ${risky.map((a) => a.name).join(", ")} ${risky.length === 1 ? "is" : "are"} at risk or being phased out.
     </p>` : ""}
+    ${agents.length ? section("AI agents", agents.length, tpl`
+      <p class="lede">Work in this scope that a machine now performs. An agent is a service in the
+      landscape like any other - it supports business steps, reaches systems, and runs on something.</p>
+      ${rows(model, [...agents].sort(byLifecycle))}`) : ""}
     ${section("Applications", apps.length, rows(model, [...apps].sort(byLifecycle), {
       emptyMessage: "No application supports this scope yet.",
     }))}
