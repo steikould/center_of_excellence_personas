@@ -31,14 +31,14 @@ replaces:
   fteEquivalent: 7.0
   displacementType: task-absorption
   retainedByHumans:
-    - "Lot disposition decision (proc-br-disposition) — never delegated"
+    - "Lot disposition decision — never delegated"
     - "Root cause investigation on any exception the agent classifies as major or critical"
   note: "Level I–II review absorbed. Level III reviewers redeployed to investigation. Confirm the attrition assumption with HR before publishing."
 
 business:
-  domain: dom-quality
-  capabilities: [cap-batch-review, cap-capa]
-  processes: [proc-br-completeness, proc-br-spec, proc-br-exception, proc-capa-intake]
+  domain: bd-manufacture-ensure-quality
+  capabilities: [cap-quality-assurance-compliance]
+  processes: [proc-batch-release-disposition, proc-deviation-management]
 
 model:
   primary: "GPT-class frontier model via Azure OpenAI, private endpoint"
@@ -47,12 +47,12 @@ model:
   promptVersioning: "TBC"
 
 interfaces:
-  systems: [sys-mes, sys-labware, sys-sap, sys-trackwise, sys-documentum]
+  systems: [app-prodline-mes, app-labcore-lims, app-qualisphere-qms, app-auriga-erp, app-releasedesk]
   tools:
-    - { name: "mes-batch-record", type: mcp, access: read, scope: "Per-site; three separate connections" }
-    - { name: "lims-results", type: mcp, access: read, scope: "Results and specifications" }
-    - { name: "trackwise-deviation", type: mcp, access: read-write, scope: "Create draft deviations; cannot close or approve" }
-    - { name: "sap-batch-master", type: mcp, access: read, scope: "Batch and material master" }
+    - { name: "prodline-batch-record", type: mcp, access: read, scope: "Per-site; three separate connections" }
+    - { name: "labcore-results", type: mcp, access: read, scope: "Results and specifications" }
+    - { name: "qualisphere-deviation", type: mcp, access: read-write, scope: "Create draft deviations; cannot close or approve" }
+    - { name: "auriga-batch-master", type: mcp, access: read, scope: "Batch and material master" }
   humanInLoop:
     mode: approve-before-commit
     gate: "QA reviewer accepts or overrides every exception classification; disposition always human"

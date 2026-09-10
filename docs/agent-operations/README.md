@@ -144,15 +144,31 @@ It carries the things nobody can currently answer in one place:
 - GxP scope, validation status, model risk tier, controls in force
 - run cost and attributed benefit, each with its own confidence marker
 
-### The Agent Atlas
+### The agent estate view
 
-The webapp in [`webapp/`](../../webapp/). One document read at four depths —
-portfolio, business domain, process, infrastructure — compiled from the manifests
-and the model, with every panel drilling into the next. Executive at the top, GxP
-control statements and network egress rules at the bottom, same document.
+Agents are not given their own application. They are projected into the
+[Enterprise Map](../../app/README.md) as nodes in the same graph as everything
+else — an `Agent` sits at T1 beside the applications it works alongside, and an
+`AgentRuntime` at T4 beside the platforms it runs on. That placement is the whole
+trick: the lens pivot, the technology chain, impact analysis and search all work
+on an agent with no special cases, and the agent estate view at `#/agents` is a
+rollup of the same graph rather than a second opinion about it.
 
-It is deliberately a *reader* of the registry, not a second source of truth. If a
-number is wrong, the fix is a pull request against `model/`.
+What that buys, concretely:
+
+- **"Which business processes stop if the agent OS landing zone fails?"** is the
+  ordinary impact-analysis question, answered against the ordinary graph: two
+  business domains, three capabilities, six processes.
+- **"What does a machine now do in pharmacovigilance?"** is the ordinary lens
+  pivot from a capability into its IT scope.
+- **ADR-001's claim that the centre is not in the request path** stops being an
+  assertion and becomes a checkable property: telemetry reaches the control plane
+  by `integrates_with`, which the graph does not treat as a dependency, so impact
+  analysis from the conformed pipeline reaches zero business processes.
+  `app/tools/verify.mjs` asserts exactly that.
+
+The view is deliberately a *reader* of the registry, not a second source of truth.
+If a number is wrong, the fix is a pull request against `model/agents/`.
 
 ### The tie to the enterprise deployment platform
 

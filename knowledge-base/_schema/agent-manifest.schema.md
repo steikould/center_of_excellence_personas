@@ -7,7 +7,7 @@ in `model/agents/{agent-id}.yaml`.
 The manifest is **framework-neutral by design**. A PwC agent OS agent, a Copilot
 Studio agent and a self-hosted Dify workflow all describe themselves with the same
 fields, because everything downstream — the registry, the telemetry contract, the
-evaluation gate, the deployment platform, the Agent Atlas — keys off this shape
+evaluation gate, the deployment platform, the Enterprise Map — keys off this shape
 rather than off any vendor's.
 
 ---
@@ -51,9 +51,9 @@ replaces:
   note: "{What actually happened to the people. Say the true thing.}"
 
 business:
-  domain: dom-{id}
+  domain: bd-{id}                   # ids from the enterprise model in app/data/
   capabilities: [cap-{id}]
-  processes: [proc-{id}]            # every step must name this agent back
+  processes: [proc-{id}]            # each must exist; the generator checks
 
 model:
   primary: "{Model and how it is reached}"
@@ -154,16 +154,23 @@ been fully handed over or has not been looked at.
 
 ## Validation
 
-`webapp/scripts/build-model.mjs` compiles and validates the whole model. It fails
-the build on any broken reference: an unknown domain, capability, process, system,
-runtime or control; a process claiming an agent that does not claim it back; a
-process whose mode requires an agent but names none.
+`app/tools/seed_agents.py` projects the registry into the enterprise graph, and
+that projection is the validation. Every binding is guarded: a manifest naming a
+business process, application, runtime, host, platform service or control that
+does not exist fails `generate_seed.py` rather than producing a dangling edge.
+Runtime `hosts` lists are cross-checked against what each manifest claims its
+runtime is, so the two cannot drift apart silently.
 
 It also derives the risk findings — no technical owner, GxP production without
 validation, no central telemetry export, no cost attribution, no evaluation, no
 degraded mode, source not held, no periodic review, unreviewed external output.
 Those are rules over the manifests, not a hand-maintained list, so they cannot go
-stale while the estate changes.
+stale while the estate changes. `health` is derived from them too: an agent
+carrying a critical finding cannot render as green.
+
+`node app/tools/verify.mjs` then asserts the acceptance criteria, including that
+every agent is bound into the graph in both directions and that the central
+control plane is in no agent's request path.
 
 ## Where to save
 

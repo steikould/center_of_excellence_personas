@@ -31,14 +31,14 @@ replaces:
   fteEquivalent: 8.0
   displacementType: channel-shift
   retainedByHumans:
-    - "Any inquiry not answerable from the approved library (proc-mi-escalate)"
-    - "Authoring and approval of new standard responses (proc-mi-author)"
+    - "Any inquiry not answerable from the approved library"
+    - "Authoring and approval of new standard responses"
   note: "Largest displacement in the estate and the most externally visible. Every answer is regulated speech."
 
 business:
-  domain: dom-commercial
-  capabilities: [cap-medinfo]
-  processes: [proc-mi-intake, proc-mi-answer, proc-mi-escalate, proc-mi-ae]
+  domain: bd-acquire-serve-customers
+  capabilities: [cap-customer-support-veterinary-services]
+  processes: [proc-case-intake-triage, proc-technical-product-support]
 
 model:
   primary: "Copilot Studio managed model"
@@ -47,11 +47,11 @@ model:
   promptVersioning: "Solution-versioned; instructions travel with the Power Platform solution export"
 
 interfaces:
-  systems: [sys-salesforce, sys-veeva-vault, sys-m365, sys-argus]
+  systems: [app-vetsupport-desk, app-vetconnect-crm, app-edms-docuvault, app-safetyvault]
   tools:
-    - { name: "sharepoint-srl", type: connector, access: read, scope: "Mirror of the approved standard-response library" }
-    - { name: "salesforce-case", type: connector, access: read-write, scope: "Create and update medical information cases" }
-    - { name: "pv-handoff", type: connector, access: write, scope: "Create a PV intake record for any suspected adverse event" }
+    - { name: "docuvault-srl", type: connector, access: read, scope: "Mirror of the approved standard-response library" }
+    - { name: "vetconnect-case", type: connector, access: read-write, scope: "Create and update medical information cases" }
+    - { name: "safetyvault-handoff", type: connector, access: write, scope: "Create a PV intake record for any suspected adverse event" }
   humanInLoop:
     mode: autonomous-with-escalation
     gate: "Answers from the library go out unreviewed. Anything off-library escalates to a specialist."

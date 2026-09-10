@@ -28,13 +28,13 @@ telemetry contract, and a view that a CEO and an SRE can read on the same day.
 | | |
 |---|---|
 | **[`docs/agent-operations/`](docs/agent-operations/README.md)** | The operating model: what the consultant-built agents are probably running on, why we federate runtimes rather than building one harness, and what the CoE actually builds |
-| **[`model/`](model/README.md)** | The source of truth — business domains, capabilities, processes, agent manifests, systems, runtimes, controls and flows, all in reviewable YAML |
-| **[`webapp/`](webapp/README.md)** | The **Agent Atlas** — one interactive document read at four depths, from executive portfolio down to network egress rules |
+| **[`model/`](model/README.md)** | The **agent registry** — one Agent Operating Manifest per agent, plus the runtimes and controls, in reviewable YAML. Projected into the map by `app/tools/generate_seed.py` |
+| **[`app/`](app/README.md)** | The **Enterprise Map** — the single navigator. Agents are nodes in the same graph as everything else, with an estate view at `#/agents` |
 | **[Agent Operating Manifest schema](knowledge-base/_schema/agent-manifest.schema.md)** | The framework-neutral record every agent registers with, and the intake artifact for the enterprise deployment platform |
 | **[ADR-001](knowledge-base/decisions/ADR-001-federated-agent-telemetry.md) · [ADR-002](knowledge-base/decisions/ADR-002-agent-operating-manifest.md)** | The two decisions the above rests on |
 
 ```bash
-cd webapp && npm install && npm run dev
+python3 -m http.server 8000 --directory app   # then open http://localhost:8000/#/agents
 ```
 
 > The model ships as **seed data** — the structure is real, the values are illustrative
@@ -129,25 +129,17 @@ Every persona goes through **8 shared modules** (learning Copilot while producin
 │   ├── technical/                     ← For dev/data-sci/automation
 │   └── strategic/                     ← For director/PM/architect
 │
-├── app/                               ← Enterprise Map web application
-│   ├── index.html                     ← Business ⇄ IT navigator (no build step)
-│   ├── data/                          ← The model as portable JSON (nodes + edges)
-│   └── tools/                         ← Seed generator and verification harness
-│
 ├── docs/agent-operations/             ← Operating model for the agent estate
 │
-├── model/                             ← Agent Atlas source of truth (YAML)
-│   ├── domains.yaml                   ← Business domains (level 0)
-│   ├── capabilities.yaml              ← Capabilities & process steps (levels 1–2)
+├── model/                             ← Agent registry (YAML, reviewed like code)
 │   ├── agents/                        ← One Agent Operating Manifest per agent
-│   ├── systems.yaml                   ← Systems of record
-│   ├── infrastructure.yaml            ← Runtimes & control plane (level 3)
-│   ├── flows.yaml                     ← Integration topology
-│   └── controls.yaml                  ← Governance controls
+│   ├── infrastructure.yaml            ← Agent runtimes & the central control plane
+│   └── controls.yaml                  ← Governance controls and how each is evidenced
 │
-└── webapp/                            ← Agent Atlas — the agent estate document
-    ├── scripts/build-model.mjs        ← Compiles + validates model/ → model.json
-    └── src/                           ← React + TypeScript
+└── app/                               ← Enterprise Map — the single navigator
+    ├── index.html                     ← Business ⇄ IT ⇄ agents, no build step
+    ├── data/                          ← The whole model as portable JSON
+    └── tools/                         ← Seed generators and the verification harness
 ```
 
 ---
@@ -169,6 +161,11 @@ realistic demo model (10 domains, 43 capabilities, 130 processes, 68 application
 including the redundant systems and unsupported capabilities that make the analysis views worth
 opening.
 
+It also carries the **agent estate**: the five consultant-delivered agents are projected out of
+`model/agents/` into the same graph, so an agent is a service in the landscape like any other — it
+supports business steps, reaches systems, and runs on something. Ask *"which business processes stop
+if the agent runtime fails?"* and it is the ordinary impact-analysis question.
+
 The model imports and exports as two plain JSON files, so entries from `knowledge-base/platforms/`
 and `knowledge-base/connections/` can be turned into nodes and edges as the knowledge base fills up.
 See [`app/README.md`](app/README.md) and [`app/data/README.md`](app/data/README.md).
@@ -187,7 +184,7 @@ This repo is **Phase 1** of an enterprise AI brain:
 
 Every artifact you produce here follows a schema designed for future graph ingestion. You're not just learning Copilot — you're building the foundation of how this company understands its own AI operations.
 
-The [Agent Atlas](webapp/README.md) is a working slice of the Phase 3 idea running today: the same nodes and edges — platforms, agents, processes, decisions, controls — rendered against a validated model in git rather than waiting on a graph database. When the graph lands, the model compiles into it instead of into JSON.
+The [Enterprise Map](app/README.md) is a working slice of the Phase 3 idea running today: the same nodes and edges — platforms, processes, agents, runtimes, controls — over a validated model in git rather than waiting on a graph database. When the graph lands, the generators write into it instead of into JSON.
 
 ---
 

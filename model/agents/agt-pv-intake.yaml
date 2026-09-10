@@ -33,14 +33,14 @@ replaces:
   fteEquivalent: 3.5
   displacementType: task-absorption
   retainedByHumans:
-    - "Medical assessment and causality (proc-ae-medreview)"
+    - "Medical assessment and causality"
     - "Final case approval before regulatory submission"
   note: "Headcount moved to case investigation and signal detection rather than being cut. Confirm before repeating this claim externally."
 
 business:
-  domain: dom-safety
-  capabilities: [cap-ae-intake]
-  processes: [proc-ae-receive, proc-ae-dedupe, proc-ae-validity, proc-ae-serious, proc-ae-narrative]
+  domain: bd-manage-clinical-regulatory-affairs
+  capabilities: [cap-pharmacovigilance]
+  processes: [proc-adverse-event-intake, proc-case-processing-assessment]
 
 model:
   primary: "GPT-class frontier model via Azure OpenAI, private endpoint"
@@ -49,11 +49,11 @@ model:
   promptVersioning: "TBC — confirm prompts are versioned artefacts, not console state"
 
 interfaces:
-  systems: [sys-argus, sys-servicenow, sys-m365, sys-veeva-vault]
+  systems: [app-safetyvault, app-vetsupport-desk, app-edms-docuvault]
   tools:
-    - { name: "argus-case-api", type: mcp, access: read-write, scope: "Create and update draft cases only; cannot submit" }
-    - { name: "vault-rsi-search", type: mcp, access: read, scope: "Reference safety information for expectedness" }
-    - { name: "graph-mail", type: mcp, access: read, scope: "Designated PV intake mailbox only" }
+    - { name: "safetyvault-case-api", type: mcp, access: read-write, scope: "Create and update draft cases only; cannot submit" }
+    - { name: "docuvault-rsi-search", type: mcp, access: read, scope: "Reference safety information for expectedness" }
+    - { name: "vetsupport-intake-mail", type: mcp, access: read, scope: "Designated PV intake mailbox only" }
     - { name: "literature-feed", type: http, access: read, scope: "Licensed abstract feed" }
   humanInLoop:
     mode: approve-before-commit
