@@ -59,7 +59,8 @@ export function tiles(model, nodes, options = {}) {
 }
 
 export function row(model, node, { sub = null, meta = null, linkTo = null } = {}) {
-  const subtitle = sub ?? (node.description ? truncate(node.description, 120) : TYPE_LABEL[node.type]);
+  const subtitle = (typeof sub === "function" ? sub(node) : sub)
+    ?? (node.description ? truncate(node.description, 120) : TYPE_LABEL[node.type]);
   return tpl`
     <li>
       <button type="button" class="row" data-goto="${linkTo || node.id}" data-node="${node.id}">
@@ -82,10 +83,55 @@ function defaultMeta(node) {
   return raw(parts.map(toHTML).join(""));
 }
 
+/**
+ * Long lists render in pages. Deeper levels of a large model can hold thousands
+ * of elements, and building that many DOM nodes up front is what makes a big
+ * model feel slow - the graph queries behind them are milliseconds. Batches are
+ * appended in place, so revealing more never re-renders the view.
+ */
+export const ROW_PAGE = 60;
+const pendingLists = new Map();
+let listSequence = 0;
+
+/** Called once per route render so keys do not leak between views. */
+export function resetLists() {
+  pendingLists.clear();
+  listSequence = 0;
+}
+
 export function rows(model, nodes, options = {}) {
   const visible = nodes.filter((n) => matchesFilters(n, state.filters));
   if (!visible.length) return emptyState(options.emptyMessage || "Nothing to show here.");
-  return tpl`<ul class="rows">${visible.map((n) => row(model, n, options))}</ul>`;
+  const key = `list-${listSequence += 1}`;
+  const limit = options.limit || ROW_PAGE;
+  const first = visible.slice(0, limit);
+  pendingLists.set(key, { model, nodes: visible, options, shown: first.length });
+  return tpl`
+    <ul class="rows" data-list="${key}">${first.map((n) => row(model, n, options))}</ul>
+    ${visible.length > first.length ? moreButton(key, visible.length - first.length) : ""}`;
+}
+
+function moreButton(key, remaining) {
+  return tpl`<p class="more-row" data-more-for="${key}">
+    <button type="button" class="ghost" data-action="show-more" data-key="${key}">
+      Show ${Math.min(remaining, ROW_PAGE)} more
+    </button>
+    <span class="count">${remaining} not shown</span>
+  </p>`;
+}
+
+/** Next batch for a paged list: HTML to append, plus what is left after it. */
+export function nextBatch(key) {
+  const entry = pendingLists.get(key);
+  if (!entry) return null;
+  const batch = entry.nodes.slice(entry.shown, entry.shown + ROW_PAGE);
+  entry.shown += batch.length;
+  const remaining = entry.nodes.length - entry.shown;
+  return {
+    rows: batch.map((n) => row(entry.model, n, entry.options)),
+    remaining,
+    footer: remaining > 0 ? moreButton(key, remaining) : null,
+  };
 }
 
 export function emptyState(message) {

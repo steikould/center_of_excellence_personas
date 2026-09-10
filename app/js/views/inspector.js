@@ -6,8 +6,9 @@ import {
   TYPE_LABEL, EDGE_LABEL, HEALTH, LIFECYCLE, CRITICALITY,
 } from "../format.js";
 import { LEVEL_LABELS } from "../model.js";
+import { CHILD_TYPES, TYPE_META, canContain } from "../create.js";
 
-export function renderInspector(model, node, { editing = false } = {}) {
+export function renderInspector(model, node, { editing = false, creating = false } = {}) {
   if (!node) return raw("");
   const trail = model.trail(node.id);
   const out = model.out(node.id);
@@ -43,14 +44,58 @@ export function renderInspector(model, node, { editing = false } = {}) {
 
     ${can("edit") && !editing
       ? tpl`<p class="insp-actions"><button type="button" class="ghost" data-action="edit-node" data-id="${node.id}">Edit this element</button>
+        ${canContain(node) ? tpl`<button type="button" class="ghost" data-action="add-child" data-id="${node.id}">Add ${childNoun(node)}</button>` : ""}
         ${can("admin") ? tpl`<button type="button" class="ghost" data-action="delete-node" data-id="${node.id}">Delete</button>` : ""}</p>`
       : ""}
+
+    ${creating && can("edit") ? createForm(node) : ""}
 
     ${relationshipSection("Points to", out.map((e) => ({ edge: e, other: model.node(e.to) })).filter((x) => x.other), node)}
     ${relationshipSection("Pointed to by", inc.map((e) => ({ edge: e, other: model.node(e.from) })).filter((x) => x.other), node)}
 
     ${can("edit") ? addRelationshipForm(model, node) : ""}
   `;
+}
+
+function childNoun(node) {
+  const types = CHILD_TYPES[node.type] || [];
+  if (types.length === 1) return (TYPE_LABEL[types[0]] || types[0]).toLowerCase();
+  return "an element inside";
+}
+
+/** Create a new element contained by `parent`. Level and lens come from the
+ *  chosen type, so the hierarchy cannot be built inconsistently by hand. */
+export function createForm(parent) {
+  const types = parent ? (CHILD_TYPES[parent.type] || []) : Object.keys(TYPE_META);
+  return tpl`<div class="insp-section">
+    <h3>${parent ? tpl`New element inside ${parent.name}` : "New element"}</h3>
+    <form class="edit-form" data-form="create-node" data-id="${parent ? parent.id : ""}">
+      <label>Type
+        <select name="type">
+          ${types.map((t) => tpl`<option value="${t}">${TYPE_LABEL[t] || t}</option>`)}
+        </select>
+      </label>
+      <label>Name<input type="text" name="name" required placeholder="e.g. Supplier Onboarding"></label>
+      <label>Description<textarea name="description" placeholder="What business problem does this address, in plain language?"></textarea></label>
+      <label>Owner<input type="text" name="owner" placeholder="Team or named steward"></label>
+      <label>Lifecycle
+        <select name="lifecycle">${Object.entries(LIFECYCLE).map(([v, l]) =>
+          tpl`<option value="${v}" ${v === "plan" ? raw("selected") : ""}>${l.label}</option>`)}</select>
+      </label>
+      <label>Criticality
+        <select name="criticality">${Object.entries(CRITICALITY).map(([v, c]) =>
+          tpl`<option value="${v}" ${v === "medium" ? raw("selected") : ""}>${c.short}</option>`)}</select>
+      </label>
+      <label>Health
+        <select name="health">${Object.entries(HEALTH).map(([v, h]) =>
+          tpl`<option value="${v}" ${v === "unknown" ? raw("selected") : ""}>${h.label}</option>`)}</select>
+      </label>
+      <div class="chips">
+        <button type="submit" class="primary">Create element</button>
+        ${parent ? tpl`<button type="button" class="ghost" data-action="cancel-create" data-id="${parent.id}">Cancel</button>` : ""}
+      </div>
+    </form>
+  </div>`;
 }
 
 function factList(model, node) {

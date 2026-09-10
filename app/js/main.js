@@ -21,6 +21,9 @@ import { renderQuality } from "./views/quality.js";
 import { renderModelAdmin } from "./views/modeladmin.js";
 import { renderAgentEstate, renderAgent, renderRuntimePanel } from "./views/agents.js";
 import { renderInspector } from "./views/inspector.js";
+import { resetLists, nextBatch } from "./views/common.js";
+import { buildNode } from "./create.js";
+import { TYPE_LABEL } from "./format.js";
 
 const view = qs("#view");
 const inspector = qs("#inspector");
@@ -28,6 +31,7 @@ const breadcrumb = qs("#breadcrumb");
 const FILTER_PARAMS = { health: "fh", lifecycle: "fl", criticality: "fc", environment: "fe" };
 
 let editingId = null;
+let creatingUnderId = null;
 let lastAnchorId = null;
 let currentRoute = { segments: [], params: new URLSearchParams() };
 
@@ -35,7 +39,6 @@ let currentRoute = { segments: [], params: new URLSearchParams() };
 (async function start() {
   const seed = await loadSeed();
   initState(seed.nodes, seed.edges);
-  qs("#model-name").textContent = state.model.meta.name;
   qs("#role").value = state.role;
   wireChrome();
   subscribe((reason) => {
@@ -51,6 +54,8 @@ function renderRoute(route) {
   const { segments, params } = route;
   const model = state.model;
   syncStateFromParams(params);
+
+  resetLists();
 
   const [head, id] = segments;
   const node = id && model.has(id) ? model.node(id) : null;
@@ -110,9 +115,11 @@ function renderRoute(route) {
   if (!inspector.hidden && node && node.id !== lastAnchorId) {
     state.selection = node.id;
     editingId = null;
+    creatingUnderId = null;
   }
   lastAnchorId = node ? node.id : null;
 
+  qs("#model-name").textContent = model.meta.name;
   document.body.dataset.lens = lens;
   render(view, body);
   renderBreadcrumb(head, node);
@@ -308,7 +315,11 @@ function wireChrome() {
     navigate(currentRoute.segments, paramsWithFilters({ t: el.dataset.level }), { replace: true });
   });
   delegate(document.body, "change", "[data-matrix]", (event, el) => {
-    navigate(["matrix"], paramsWithFilters({ [el.dataset.matrix]: el.value }), { replace: true });
+    navigate(["matrix"], paramsWithFilters({ [el.dataset.matrix]: el.value, page: null }), { replace: true });
+  });
+  delegate(document.body, "click", "[data-matrix-page]", (event, el) => {
+    if (el.disabled) return;
+    navigate(["matrix"], paramsWithFilters({ page: el.dataset.matrixPage }), { replace: true });
   });
   delegate(document.body, "submit", "[data-form]", (event, el) => {
     event.preventDefault();
@@ -393,13 +404,17 @@ function selectNode(id, { silent = false } = {}) {
 }
 
 function openInspector(node) {
-  render(inspector, renderInspector(state.model, node, { editing: editingId === node.id }));
+  render(inspector, renderInspector(state.model, node, {
+    editing: editingId === node.id,
+    creating: creatingUnderId === node.id,
+  }));
   inspector.hidden = false;
 }
 
 function closeInspector() {
   inspector.hidden = true;
   editingId = null;
+  creatingUnderId = null;
   state.selection = null;
 }
 
@@ -425,9 +440,33 @@ function handleAction(action, el, event) {
     case "dual": navigate(["dual", id], paramsWithFilters({ t: null })); break;
     case "close-inspector": closeInspector(); break;
 
+    case "show-more": {
+      const batch = nextBatch(el.dataset.key);
+      if (!batch) return undefined;
+      const list = qs(`[data-list="${CSS.escape(el.dataset.key)}"]`);
+      const footer = el.closest(".more-row");
+      if (list) list.insertAdjacentHTML("beforeend", toHTML(batch.rows));
+      if (footer) {
+        if (batch.footer) footer.outerHTML = toHTML(batch.footer);
+        else footer.remove();
+      }
+      break;
+    }
+
     case "edit-node":
       if (!can("edit")) return toast("Switch to the Editor role to make changes.");
       editingId = id;
+      creatingUnderId = null;
+      openInspector(model.node(id));
+      break;
+    case "add-child":
+      if (!can("edit")) return toast("Switch to the Editor role to make changes.");
+      creatingUnderId = id;
+      editingId = null;
+      openInspector(model.node(id));
+      break;
+    case "cancel-create":
+      creatingUnderId = null;
       openInspector(model.node(id));
       break;
     case "cancel-edit":
@@ -548,6 +587,25 @@ function handleForm(kind, form) {
     return;
   }
 
+  if (kind === "create-node") {
+    const parent = form.dataset.id ? model.node(form.dataset.id) : null;
+    const name = String(data.name || "").trim();
+    if (!name) { toast("Give the new element a name."); return; }
+    let node;
+    try {
+      node = buildNode(model, { ...data, name, parent });
+    } catch (err) { toast(err.message); return; }
+    applyChange({
+      op: "node.create", target: node.id, after: node, parent: parent ? parent.id : null,
+      summary: `Created ${TYPE_LABEL[node.type] || node.type} "${node.name}"${parent ? ` inside ${parent.name}` : ""}`,
+    });
+    creatingUnderId = null;
+    state.selection = node.id;
+    refreshInspector();
+    toast(`Created "${node.name}". It is in the change log.`);
+    return;
+  }
+
   if (kind === "add-edge") {
     const sourceId = form.dataset.id;
     const targetId = resolveNodeRef(model, String(data.target || ""));
@@ -596,9 +654,11 @@ function ensureNodeDatalist(model) {
 /* --------------------------------------------------------------- import */
 document.addEventListener("change", async (event) => {
   if (event.target.id !== "import-file") return;
-  const report = qs("#import-report");
-  const files = [...event.target.files];
+  const input = event.target;
+  const files = [...input.files];
+  input.value = ""; // so re-selecting the same file fires again
   if (!files.length) return;
+  const report = () => qs("#import-report");
   let nodesArray = null;
   let edgesArray = null;
   let meta = {};
@@ -610,22 +670,24 @@ document.addEventListener("change", async (event) => {
       if (doc.meta) meta = { ...meta, ...doc.meta };
     }
   } catch (err) {
-    render(report, tpl`<p class="notice risk">${err.message}</p>`);
+    render(report(), tpl`<p class="notice risk">${err.message}</p>`);
     return;
   }
   if (!nodesArray) {
-    render(report, tpl`<p class="notice risk">No nodes found. Include a nodes file, or a bundle holding both.</p>`);
+    render(report(), tpl`<p class="notice risk">No nodes found. Include a nodes file, or a bundle holding both.</p>`);
     return;
   }
   const { nodes, edges, errors, warnings } = validateDocuments(nodesArray, edgesArray || []);
   if (errors.length) {
-    render(report, tpl`<p class="notice risk">Import rejected - ${errors.length} problem(s):</p>
+    render(report(), tpl`<p class="notice risk">Import rejected - ${errors.length} problem(s):</p>
       <ul class="link-list">${errors.slice(0, 20).map((e) => tpl`<li>${e}</li>`)}</ul>`);
     return;
   }
+  // Replacing the model re-renders this page, so the report element has to be
+  // looked up again afterwards - and we stay here so the admin can read it.
   replaceModel(canonicalNodesDocument(nodes, meta), canonicalEdgesDocument(edges, meta));
-  navigate([], new URLSearchParams());
-  render(report, tpl`<p class="notice">Imported ${nodes.length} nodes and ${edges.length} relationships.
-    ${warnings.length ? `${warnings.length} warning(s): ${warnings.slice(0, 3).join(" ")}` : ""}</p>`);
-  toast("Model imported.");
+  render(report(), tpl`<p class="notice">Imported ${nodes.length} nodes and ${edges.length} relationships.
+    ${warnings.length ? tpl`${warnings.length} warning(s): ${warnings.slice(0, 3).join(" ")}` : ""}
+    <a href="#/">Open the domain map →</a></p>`);
+  toast(`Model imported: ${nodes.length} nodes.`);
 });

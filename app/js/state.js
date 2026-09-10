@@ -56,7 +56,17 @@ export function rebuild() {
         break;
       }
       case "node.create":
-        if (!nodeIndex.get(change.target)) nodeIndex.set(change.target, { ...change.after });
+        if (!nodeIndex.get(change.target)) {
+          nodeIndex.set(change.target, { ...change.after });
+          // The containment edge travels with the node, so undoing a create
+          // cannot leave a dangling relationship behind.
+          if (change.parent && nodeIndex.get(change.parent)) {
+            const eid = `${change.parent}|contains|${change.target}`;
+            if (!edgeIndex.get(eid)) {
+              edgeIndex.set(eid, { id: eid, type: "contains", from: change.parent, to: change.target, props: {} });
+            }
+          }
+        }
         break;
       case "node.delete":
         nodeIndex.delete(change.target);
