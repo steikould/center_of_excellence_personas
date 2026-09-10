@@ -12,6 +12,13 @@
       "props": {}
     },
     {
+      "id": "agt-batch-review|depends_on|app-edms-docuvault",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-edms-docuvault",
+      "props": {}
+    },
+    {
       "id": "agt-batch-review|depends_on|app-labcore-lims",
       "type": "depends_on",
       "from": "agt-batch-review",

@@ -210,4 +210,4 @@ still in draft.
 - Pin which `gen_ai.*` convention version the central pipeline accepts, and who owns the mapping layer when it revs.
 - Agree a Copilot Credit → token conversion factor, or accept that cost is not comparable across frameworks and say so on the dashboard.
 - Decide whether `agt-reg-assembly` continues in production while its validation is in draft. That is a risk acceptance with a named signatory, or it stops.
-- Decide the Documentum position. Legacy OCR failures cap batch-record automation, and no amount of agent work routes around it.
+- Decide the DocuVault OCR position. Scanned attachments that fail OCR are silently skipped, which caps batch-record automation on older batches — and no amount of agent work routes around it.

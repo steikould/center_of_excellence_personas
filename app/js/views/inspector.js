@@ -1,5 +1,5 @@
 /** The inspector panel: full detail for one element, plus in-place editing. */
-import { tpl, raw, toHTML } from "../util.js";
+import { tpl, raw, toHTML, truncate, plural } from "../util.js";
 import { state, can } from "../state.js";
 import {
   healthBadge, lifecycleBadge, criticalityBadge, typeBadge, maturityMeter,
@@ -64,13 +64,38 @@ function factList(model, node) {
   ];
   if (node.maturity) facts.push(["Maturity", toHTML(maturityMeter(node.maturity)) + ` ${node.maturity}/5`]);
   if (node.tags.length) facts.push(["Tags", node.tags.join(", ")]);
-  for (const [k, v] of props) facts.push([labelize(k), Array.isArray(v) ? v.join(", ") : String(v)]);
+  for (const [k, v] of props) facts.push([labelize(k), formatValue(v)]);
   for (const [k, v] of refs) facts.push([`Ref: ${k}`, String(v)]);
 
   return tpl`<div class="insp-section"><h3>Details</h3><dl>
     ${facts.map(([k, v]) => tpl`<dt>${k}</dt><dd>${k === "Maturity" ? raw(v) : v}</dd>`)}
     <dt>Identifier</dt><dd class="mono">${node.id}</dd>
   </dl></div>`;
+}
+
+/**
+ * Render whatever a node carries in `props`.
+ *
+ * The inspector is the generic viewer: it sees every node type, including ones
+ * whose props hold structure rather than scalars (an agent's tools, controls
+ * and telemetry coverage). It should summarise those readably rather than
+ * stringify them, and leave the full rendering to the view that knows what
+ * they mean.
+ */
+function formatValue(value) {
+  if (value == null) return "—";
+  if (Array.isArray(value)) {
+    if (!value.length) return "—";
+    if (value.every((v) => typeof v !== "object" || v === null)) return truncate(value.join(", "), 200);
+    const named = value.map((v) => v?.name ?? v?.label ?? v?.id).filter(Boolean);
+    return named.length === value.length ? truncate(named.join(", "), 200) : plural(value.length, "entry", "entries");
+  }
+  if (typeof value === "object") {
+    const pairs = Object.entries(value).filter(([, v]) => typeof v !== "object" || v === null);
+    if (!pairs.length) return plural(Object.keys(value).length, "field");
+    return truncate(pairs.map(([k, v]) => `${labelize(k).toLowerCase()} ${v}`).join(" · "), 200);
+  }
+  return String(value);
 }
 
 function labelize(key) {

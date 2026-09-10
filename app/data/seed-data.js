@@ -629,6 +629,12 @@ export const NODES_DOCUMENT = {
             "type": "mcp",
             "access": "read",
             "scope": "Batch and material master"
+          },
+          {
+            "name": "docuvault-attachments",
+            "type": "mcp",
+            "access": "read",
+            "scope": "Batch record attachments; effective versions only"
           }
         ],
         "dataClassifications": [
@@ -651,7 +657,7 @@ export const NODES_DOCUMENT = {
         },
         "telemetryGaps": [
           "Per-check outcomes are not individually spanned — a failed review shows as one span, so you cannot tell which of the 140 checks is degrading",
-          "Documentum-sourced attachments silently skipped when OCR fails; no span event is emitted for the skip"
+          "Scanned attachments pulled from DocuVault are silently skipped when OCR fails; no span event is emitted for the skip, so the gap is invisible in the telemetry"
         ],
         "gxpRelevant": true,
         "part11Scope": true,
@@ -721,7 +727,7 @@ export const NODES_DOCUMENT = {
         "p95LatencySeconds": 2100,
         "escalationRatePct": 22.7,
         "openQuestions": [
-          "The Documentum OCR gap caps this agent's coverage. Was that flagged at handover, and is it in anyone's backlog?",
+          "The DocuVault OCR gap caps this agent's coverage on older batches. Was that flagged at handover, and is it in anyone's backlog?",
           "Per-site MES integrations were built three times. Is there a consolidation plan or is this now permanent?",
           "8.7% of runs fail. What is the failure taxonomy and who watches it?"
         ],
@@ -17833,6 +17839,13 @@ export const EDGES_DOCUMENT = {
       "type": "depends_on",
       "from": "agt-batch-review",
       "to": "app-auriga-erp",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-edms-docuvault",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-edms-docuvault",
       "props": {}
     },
     {

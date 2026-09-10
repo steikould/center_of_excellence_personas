@@ -63,3 +63,10 @@ jobs:
         # Includes the byte-identical export check, so the canonical form stays
         # the same whether Python or the browser wrote it.
         run: node app/tools/verify.mjs
+
+      - name: Render checks
+        # The views are pure functions returning HTML, so every one of them can
+        # be drawn here with no browser. Catches dead navigation targets, broken
+        # markup and values that stringify badly - the bugs a passing model
+        # check cannot see.
+        run: node app/tools/render-check.mjs
