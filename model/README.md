@@ -1,37 +1,56 @@
-# The model
+# The agent registry
 
-Source of truth for the [Agent Atlas](../webapp/). Plain YAML, so it can be reviewed
-in a pull request, edited by a person, or written by an agent.
+The system of record for **what agents exist**. One Agent Operating Manifest per
+agent, in plain YAML, reviewed in a pull request like code.
+
+This directory holds the agent layer only. The enterprise business and IT model —
+domains, capabilities, processes, applications, infrastructure — lives in
+[`app/data/`](../app/data/) and is generated from `app/tools/seed_business.py` and
+`seed_apps.py`. The two meet in the graph, not in a second copy of the model.
 
 | File | What it holds |
 |------|---------------|
-| `meta.yaml` | Schema version, as-of date, confidence-level definitions |
-| `domains.yaml` | Level 0 — business domains, their outcomes, pressures and KPIs |
-| `capabilities.yaml` | Levels 1–2 — capabilities and the process steps inside them |
 | `agents/*.yaml` | One [Agent Operating Manifest](../knowledge-base/_schema/agent-manifest.schema.md) per agent |
-| `systems.yaml` | Systems of record — mirrors the platform-entry schema |
-| `infrastructure.yaml` | Level 3 — federated runtimes and the central control plane |
-| `flows.yaml` | Integration topology — mirrors the connection-pattern schema |
-| `controls.yaml` | Governance controls and how each is actually evidenced |
+| `infrastructure.yaml` | The federated runtimes agents execute on, and the central control plane |
+| `controls.yaml` | Governance controls, each with how conformance is actually evidenced |
+| `meta.yaml` | Schema version and the confidence-level definitions |
 
-## Editing
+## Regenerating
 
 ```bash
-cd webapp
-npm run model     # compile + validate → webapp/public/model.json
+python3 app/tools/generate_seed.py   # projects the registry into app/data/
+node app/tools/verify.mjs            # acceptance checks, agent layer included
 ```
 
-The compile step *is* the validation step. It fails on any broken cross-reference —
-an unknown domain, capability, process, system, runtime or control; a process
-claiming an agent that does not claim it back; a process whose mode requires an
-agent but names none. It warns on governance gaps that are not build-breaking, and
-derives the risk findings the atlas renders.
+**Commit `app/data/` alongside your manifest change.** CI regenerates and fails if
+the committed graph no longer matches the registry it came from — editing a
+manifest without regenerating is the easy mistake, and a registry that disagrees
+with its own output is worse than no registry.
+
+`app/tools/seed_agents.py` does the projection. Every binding into the enterprise
+model is guarded: a manifest naming a process, application, host or platform
+service that does not exist fails the generator rather than producing a dangling
+edge. Runtime `hosts` lists are cross-checked against what each manifest claims
+its runtime is, so the two cannot drift apart silently.
+
+## Where an agent lands in the graph
+
+| | Level | Why there |
+|---|---|---|
+| `Agent` | T1 — application & service landscape | An agent is a service that supports business steps. Placing it beside applications means the lens pivot, technology chain and impact analysis work on it with no special cases. |
+| `AgentRuntime` | T4 — platform & runtime | It is one. Runtimes then run on the clusters, hosts and sites already in the model. |
+
+The control plane is bound in as platform services, but telemetry reaches it by
+`integrates_with`, never `depends_on`. That is deliberate: the graph does not
+treat an integration as a dependency, so impact analysis from the conformed
+telemetry pipeline reaches **zero** business processes — which makes ADR-001's
+central claim checkable rather than merely asserted. `verify.mjs` asserts it.
 
 ## Confidence
 
-Every record carries `confidence: seed | declared | evidenced`.
+Every record carries `confidence: seed | declared | evidenced`, and the agent
+estate view renders the marker wherever a value appears.
 
-**Everything in this seed model is `seed`** — illustrative structure, not an
-inventory. The atlas renders the marker on every page precisely so that unverified
-numbers cannot quietly become fact. Replace them with what the handover checks in
+**Everything here is `seed`** — illustrative structure, not an inventory. Replace
+it with what the handover checks in
 [`docs/agent-operations/`](../docs/agent-operations/README.md) turn up.

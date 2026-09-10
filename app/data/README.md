@@ -54,9 +54,15 @@ file system where `fetch` is unavailable. It is generated — never edit it by h
 | `props` | Anything type-specific: vendor, protocol, environment, region, cost band… |
 | `externalRefs` | Identifiers in the systems this was imported from, e.g. `{"cmdb": "CI-…"}`. |
 
-**Node types** — `BusinessDomain`, `Capability`, `Process`, `Activity`, `Application`,
+**Node types** — `BusinessDomain`, `Capability`, `Process`, `Activity`, `Application`, `Agent`,
 `ExternalService`, `DeployableUnit`, `DataStore`, `Interface`, `IntegrationFlow`, `PlatformService`,
-`Environment`, `Host`, `Cluster`, `NetworkZone`, `Site`.
+`AgentRuntime`, `Environment`, `Host`, `Cluster`, `NetworkZone`, `Site`.
+
+`Agent` (T1) and `AgentRuntime` (T4) are generated from the agent registry in
+[`../../model/`](../../model/README.md) by `app/tools/seed_agents.py` — do not hand-edit them here;
+edit the manifest and regenerate. An agent is a supporting service like an application, but it is
+deliberately **not** an application: redundancy, coverage gaps and the capability matrix all mean
+*application* specifically.
 
 ## edges.json
 
@@ -78,12 +84,12 @@ Edges are directed. `id` defaults to `from|type|to`, which makes them naturally 
 | Type | Direction | Meaning |
 |---|---|---|
 | `contains` | parent → child | Hierarchy within a lens. Domain→Capability→Process→Activity; Application→its parts; Environment→Host; Site→NetworkZone. |
-| `supports` | Application → business node | **The pivot edge.** What business work this system serves. |
+| `supports` | Application → business node, Agent → business node | **The pivot edge.** What business work this system serves. From an agent it may carry `props.cycleBeforeMinutes` / `cycleAfterMinutes` / `cycleUnit` — that agent's claim about what it did to the step. |
 | `realizes` | DeployableUnit → Application, ExternalService → Application, unit → Interface | The concrete thing that provides the abstract one. |
 | `depends_on` | any → any | A dependency not covered by a more specific type. |
 | `connects_to` | Application → IntegrationFlow → Application | Integration, modelled with the flow as the middle node so it can carry protocol and frequency. |
-| `integrates_with` | Application ↔ Application | Convenience summary of a `connects_to` pair; carries `props.via`. |
-| `runs_on` | DeployableUnit → PlatformService, DataStore → PlatformService | Execution or storage platform. |
+| `integrates_with` | Application ↔ Application, AgentRuntime → control plane, Agent → Agent | Convenience summary of a `connects_to` pair; carries `props.via`. Also used for links that are explicitly **not** dependencies — telemetry export and agent handoffs — so they never appear in impact analysis. |
+| `runs_on` | DeployableUnit → PlatformService, DataStore → PlatformService, Agent → AgentRuntime | Execution or storage platform. |
 | `hosted_in` | PlatformService → Host, Host → Site, Host → NetworkZone | Physical or logical placement. |
 | `stores` / `reads` | DeployableUnit ↔ DataStore | Which unit owns the data and which only reads it. |
 

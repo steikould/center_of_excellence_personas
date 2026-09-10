@@ -5,6 +5,284 @@
   "model": "Vetrellis Animal Health - demo enterprise model",
   "edges": [
     {
+      "id": "agt-batch-review|depends_on|app-auriga-erp",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-auriga-erp",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-edms-docuvault",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-edms-docuvault",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-labcore-lims",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-labcore-lims",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-prodline-mes",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-prodline-mes",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-qualisphere-qms",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-qualisphere-qms",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-releasedesk",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-releasedesk",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|runs_on|rt-agentos-azure",
+      "type": "runs_on",
+      "from": "agt-batch-review",
+      "to": "rt-agentos-azure",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|supports|proc-batch-release-disposition",
+      "type": "supports",
+      "from": "agt-batch-review",
+      "to": "proc-batch-release-disposition",
+      "props": {
+        "cycleBeforeMinutes": 600,
+        "cycleAfterMinutes": 125,
+        "cycleUnit": "per batch"
+      }
+    },
+    {
+      "id": "agt-batch-review|supports|proc-deviation-management",
+      "type": "supports",
+      "from": "agt-batch-review",
+      "to": "proc-deviation-management",
+      "props": {
+        "cycleBeforeMinutes": 330,
+        "cycleAfterMinutes": 95,
+        "cycleUnit": "per deviation"
+      }
+    },
+    {
+      "id": "agt-medinfo|depends_on|app-edms-docuvault",
+      "type": "depends_on",
+      "from": "agt-medinfo",
+      "to": "app-edms-docuvault",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|depends_on|app-safetyvault",
+      "type": "depends_on",
+      "from": "agt-medinfo",
+      "to": "app-safetyvault",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|depends_on|app-vetconnect-crm",
+      "type": "depends_on",
+      "from": "agt-medinfo",
+      "to": "app-vetconnect-crm",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|depends_on|app-vetsupport-desk",
+      "type": "depends_on",
+      "from": "agt-medinfo",
+      "to": "app-vetsupport-desk",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|integrates_with|agt-pv-intake",
+      "type": "integrates_with",
+      "from": "agt-medinfo",
+      "to": "agt-pv-intake",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|runs_on|rt-copilot-studio",
+      "type": "runs_on",
+      "from": "agt-medinfo",
+      "to": "rt-copilot-studio",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|supports|proc-case-intake-triage",
+      "type": "supports",
+      "from": "agt-medinfo",
+      "to": "proc-case-intake-triage",
+      "props": {
+        "cycleBeforeMinutes": 15,
+        "cycleAfterMinutes": 2,
+        "cycleUnit": "per inquiry"
+      }
+    },
+    {
+      "id": "agt-medinfo|supports|proc-technical-product-support",
+      "type": "supports",
+      "from": "agt-medinfo",
+      "to": "proc-technical-product-support",
+      "props": {
+        "cycleBeforeMinutes": 45,
+        "cycleAfterMinutes": 6,
+        "cycleUnit": "per inquiry"
+      }
+    },
+    {
+      "id": "agt-pv-intake|depends_on|app-edms-docuvault",
+      "type": "depends_on",
+      "from": "agt-pv-intake",
+      "to": "app-edms-docuvault",
+      "props": {}
+    },
+    {
+      "id": "agt-pv-intake|depends_on|app-safetyvault",
+      "type": "depends_on",
+      "from": "agt-pv-intake",
+      "to": "app-safetyvault",
+      "props": {}
+    },
+    {
+      "id": "agt-pv-intake|depends_on|app-vetsupport-desk",
+      "type": "depends_on",
+      "from": "agt-pv-intake",
+      "to": "app-vetsupport-desk",
+      "props": {}
+    },
+    {
+      "id": "agt-pv-intake|runs_on|rt-agentos-azure",
+      "type": "runs_on",
+      "from": "agt-pv-intake",
+      "to": "rt-agentos-azure",
+      "props": {}
+    },
+    {
+      "id": "agt-pv-intake|supports|proc-adverse-event-intake",
+      "type": "supports",
+      "from": "agt-pv-intake",
+      "to": "proc-adverse-event-intake",
+      "props": {
+        "cycleBeforeMinutes": 240,
+        "cycleAfterMinutes": 25,
+        "cycleUnit": "per case"
+      }
+    },
+    {
+      "id": "agt-pv-intake|supports|proc-case-processing-assessment",
+      "type": "supports",
+      "from": "agt-pv-intake",
+      "to": "proc-case-processing-assessment",
+      "props": {
+        "cycleBeforeMinutes": 195,
+        "cycleAfterMinutes": 47,
+        "cycleUnit": "per case"
+      }
+    },
+    {
+      "id": "agt-reg-assembly|depends_on|app-edms-docuvault",
+      "type": "depends_on",
+      "from": "agt-reg-assembly",
+      "to": "app-edms-docuvault",
+      "props": {}
+    },
+    {
+      "id": "agt-reg-assembly|depends_on|app-regdossier",
+      "type": "depends_on",
+      "from": "agt-reg-assembly",
+      "to": "app-regdossier",
+      "props": {}
+    },
+    {
+      "id": "agt-reg-assembly|runs_on|rt-agentos-azure",
+      "type": "runs_on",
+      "from": "agt-reg-assembly",
+      "to": "rt-agentos-azure",
+      "props": {}
+    },
+    {
+      "id": "agt-reg-assembly|supports|proc-dossier-assembly",
+      "type": "supports",
+      "from": "agt-reg-assembly",
+      "to": "proc-dossier-assembly",
+      "props": {
+        "cycleBeforeMinutes": 2400,
+        "cycleAfterMinutes": 180,
+        "cycleUnit": "per submission"
+      }
+    },
+    {
+      "id": "agt-reg-assembly|supports|proc-submission-tracking",
+      "type": "supports",
+      "from": "agt-reg-assembly",
+      "to": "proc-submission-tracking",
+      "props": {
+        "cycleBeforeMinutes": 480,
+        "cycleAfterMinutes": 90,
+        "cycleUnit": "per submission"
+      }
+    },
+    {
+      "id": "agt-supplier-triage|depends_on|app-auriga-erp",
+      "type": "depends_on",
+      "from": "agt-supplier-triage",
+      "to": "app-auriga-erp",
+      "props": {}
+    },
+    {
+      "id": "agt-supplier-triage|depends_on|app-qualisphere-qms",
+      "type": "depends_on",
+      "from": "agt-supplier-triage",
+      "to": "app-qualisphere-qms",
+      "props": {}
+    },
+    {
+      "id": "agt-supplier-triage|depends_on|app-supplierhub",
+      "type": "depends_on",
+      "from": "agt-supplier-triage",
+      "to": "app-supplierhub",
+      "props": {}
+    },
+    {
+      "id": "agt-supplier-triage|runs_on|rt-dify-onprem",
+      "type": "runs_on",
+      "from": "agt-supplier-triage",
+      "to": "rt-dify-onprem",
+      "props": {}
+    },
+    {
+      "id": "agt-supplier-triage|supports|proc-supplier-performance-review",
+      "type": "supports",
+      "from": "agt-supplier-triage",
+      "to": "proc-supplier-performance-review",
+      "props": {
+        "cycleBeforeMinutes": 300,
+        "cycleAfterMinutes": 75,
+        "cycleUnit": "per review"
+      }
+    },
+    {
+      "id": "agt-supplier-triage|supports|proc-supplier-qualification",
+      "type": "supports",
+      "from": "agt-supplier-triage",
+      "to": "proc-supplier-qualification",
+      "props": {
+        "cycleBeforeMinutes": 420,
+        "cycleAfterMinutes": 95,
+        "cycleUnit": "per supplier"
+      }
+    },
+    {
       "id": "app-archimap|contains|ds-archimap-db",
       "type": "contains",
       "from": "app-archimap",
@@ -5211,6 +5489,146 @@
       "type": "contains",
       "from": "cap-warehousing-distribution",
       "to": "proc-order-picking-packing",
+      "props": {}
+    },
+    {
+      "id": "cp-atlas|depends_on|plat-apigw",
+      "type": "depends_on",
+      "from": "cp-atlas",
+      "to": "plat-apigw",
+      "props": {}
+    },
+    {
+      "id": "cp-atlas|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "cp-atlas",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "cp-atlas|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "cp-atlas",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "cp-eval|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "cp-eval",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "cp-eval|depends_on|plat-scheduler",
+      "type": "depends_on",
+      "from": "cp-eval",
+      "to": "plat-scheduler",
+      "props": {}
+    },
+    {
+      "id": "cp-eval|integrates_with|cp-warehouse",
+      "type": "integrates_with",
+      "from": "cp-eval",
+      "to": "cp-warehouse",
+      "props": {}
+    },
+    {
+      "id": "cp-eval|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "cp-eval",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "cp-otel|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "cp-otel",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "cp-otel|depends_on|plat-observability",
+      "type": "depends_on",
+      "from": "cp-otel",
+      "to": "plat-observability",
+      "props": {}
+    },
+    {
+      "id": "cp-otel|integrates_with|cp-warehouse",
+      "type": "integrates_with",
+      "from": "cp-otel",
+      "to": "cp-warehouse",
+      "props": {}
+    },
+    {
+      "id": "cp-otel|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "cp-otel",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "cp-policy|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "cp-policy",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "cp-policy|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "cp-policy",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "cp-registry|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "cp-registry",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "cp-registry|integrates_with|cp-policy",
+      "type": "integrates_with",
+      "from": "cp-registry",
+      "to": "cp-policy",
+      "props": {}
+    },
+    {
+      "id": "cp-registry|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "cp-registry",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "cp-warehouse|depends_on|plat-lakehouse",
+      "type": "depends_on",
+      "from": "cp-warehouse",
+      "to": "plat-lakehouse",
+      "props": {}
+    },
+    {
+      "id": "cp-warehouse|depends_on|plat-objectstore",
+      "type": "depends_on",
+      "from": "cp-warehouse",
+      "to": "plat-objectstore",
+      "props": {}
+    },
+    {
+      "id": "cp-warehouse|integrates_with|cp-atlas",
+      "type": "integrates_with",
+      "from": "cp-warehouse",
+      "to": "cp-atlas",
+      "props": {}
+    },
+    {
+      "id": "cp-warehouse|runs_on|host-object-store-east",
+      "type": "runs_on",
+      "from": "cp-warehouse",
+      "to": "host-object-store-east",
       "props": {}
     },
     {
@@ -11500,6 +11918,118 @@
       "type": "contains",
       "from": "proc-payment-processing",
       "to": "act-payment-exception-handling",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|depends_on|plat-apigw",
+      "type": "depends_on",
+      "from": "rt-agentos-azure",
+      "to": "plat-apigw",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "rt-agentos-azure",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|depends_on|plat-idp",
+      "type": "depends_on",
+      "from": "rt-agentos-azure",
+      "to": "plat-idp",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|hosted_in|site-cloud-east",
+      "type": "hosted_in",
+      "from": "rt-agentos-azure",
+      "to": "site-cloud-east",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|integrates_with|cp-otel",
+      "type": "integrates_with",
+      "from": "rt-agentos-azure",
+      "to": "cp-otel",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "rt-agentos-azure",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "rt-copilot-studio|depends_on|plat-idp",
+      "type": "depends_on",
+      "from": "rt-copilot-studio",
+      "to": "plat-idp",
+      "props": {}
+    },
+    {
+      "id": "rt-copilot-studio|depends_on|plat-vendor-cloud",
+      "type": "depends_on",
+      "from": "rt-copilot-studio",
+      "to": "plat-vendor-cloud",
+      "props": {}
+    },
+    {
+      "id": "rt-copilot-studio|hosted_in|site-vendor-cloud",
+      "type": "hosted_in",
+      "from": "rt-copilot-studio",
+      "to": "site-vendor-cloud",
+      "props": {}
+    },
+    {
+      "id": "rt-copilot-studio|integrates_with|cp-otel",
+      "type": "integrates_with",
+      "from": "rt-copilot-studio",
+      "to": "cp-otel",
+      "props": {}
+    },
+    {
+      "id": "rt-copilot-studio|runs_on|host-vendor-managed",
+      "type": "runs_on",
+      "from": "rt-copilot-studio",
+      "to": "host-vendor-managed",
+      "props": {}
+    },
+    {
+      "id": "rt-dify-onprem|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "rt-dify-onprem",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "rt-dify-onprem|depends_on|plat-idp",
+      "type": "depends_on",
+      "from": "rt-dify-onprem",
+      "to": "plat-idp",
+      "props": {}
+    },
+    {
+      "id": "rt-dify-onprem|hosted_in|site-hq-dc",
+      "type": "hosted_in",
+      "from": "rt-dify-onprem",
+      "to": "site-hq-dc",
+      "props": {}
+    },
+    {
+      "id": "rt-dify-onprem|integrates_with|cp-otel",
+      "type": "integrates_with",
+      "from": "rt-dify-onprem",
+      "to": "cp-otel",
+      "props": {}
+    },
+    {
+      "id": "rt-dify-onprem|runs_on|host-vm-cluster-hq",
+      "type": "runs_on",
+      "from": "rt-dify-onprem",
+      "to": "host-vm-cluster-hq",
       "props": {}
     },
     {

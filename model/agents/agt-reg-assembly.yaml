@@ -31,14 +31,22 @@ replaces:
   fteEquivalent: 5.0
   displacementType: task-absorption
   retainedByHumans:
-    - "Regulatory QC review (proc-sub-qc)"
-    - "Authority transmission (proc-sub-file) — agent has no gateway access by design"
+    - "Regulatory QC review"
+    - "Authority transmission — agent has no gateway access by design"
   note: "Three contract publishing associates not renewed. Two internal associates moved to strategy roles."
 
 business:
-  domain: dom-regulatory
-  capabilities: [cap-submission]
-  processes: [proc-sub-plan, proc-sub-assemble, proc-sub-validate]
+  domain: bd-manage-clinical-regulatory-affairs
+  capabilities: [cap-regulatory-submission-management]
+  processes:
+    - id: proc-dossier-assembly
+      cycleBeforeMinutes: 2400
+      cycleAfterMinutes: 180
+      cycleUnit: "per submission"
+    - id: proc-submission-tracking
+      cycleBeforeMinutes: 480
+      cycleAfterMinutes: 90
+      cycleUnit: "per submission"
 
 model:
   primary: "GPT-class frontier model via Azure OpenAI, private endpoint"
@@ -47,10 +55,10 @@ model:
   promptVersioning: "TBC"
 
 interfaces:
-  systems: [sys-veeva-vault, sys-veeva-rim]
+  systems: [app-regdossier, app-edms-docuvault]
   tools:
-    - { name: "vault-doc-retrieve", type: mcp, access: read, scope: "Approved documents only; effective versions" }
-    - { name: "rim-submission", type: mcp, access: read-write, scope: "Build and modify submission structures; cannot transmit" }
+    - { name: "docuvault-doc-retrieve", type: mcp, access: read, scope: "Approved documents only; effective versions" }
+    - { name: "regdossier-submission", type: mcp, access: read-write, scope: "Build and modify submission structures; cannot transmit" }
     - { name: "ectd-validator", type: http, access: execute, scope: "Third-party validation engine" }
   humanInLoop:
     mode: review-after-produce

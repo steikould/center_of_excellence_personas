@@ -554,6 +554,896 @@ export const NODES_DOCUMENT = {
       }
     },
     {
+      "id": "agt-batch-review",
+      "type": "Agent",
+      "lens": "it",
+      "level": "T1",
+      "name": "Batch Record Review Agent",
+      "description": "Performs completeness, data-integrity and specification-conformance review of executed batch records, and drafts deviations for exceptions.",
+      "code": "",
+      "owner": "CoE Platform Engineering",
+      "lifecycle": "active",
+      "criticality": "critical",
+      "health": "watch",
+      "maturity": 0,
+      "tags": [
+        "agent",
+        "gxp",
+        "production",
+        "pwc-agent-os"
+      ],
+      "props": {
+        "shortName": "Batch Review",
+        "version": "1.4.2",
+        "status": "production",
+        "confidence": "seed",
+        "framework": "pwc-agent-os",
+        "frameworkVersion": "TBC",
+        "orchestrationStyle": "Deterministic checklist execution with LLM adjudication per check",
+        "interop": "MCP for all tool access",
+        "runtime": "rt-agentos-azure",
+        "builtBy": "PwC",
+        "deliveredOn": "2026-04-18",
+        "handoverStatus": "partial",
+        "sourceAvailable": true,
+        "sourceLocation": "TBC",
+        "businessOwner": "Director, QA Operations",
+        "technicalOwner": "CoE Platform Engineering",
+        "accountableExecutive": "VP, Global Quality",
+        "replacesRole": "QA Batch Record Reviewer (Level I–II)",
+        "fteEquivalent": 7,
+        "displacementType": "task-absorption",
+        "retainedByHumans": [
+          "Lot disposition decision — never delegated",
+          "Root cause investigation on any exception the agent classifies as major or critical"
+        ],
+        "replacesNote": "Level I–II review absorbed. Level III reviewers redeployed to investigation. Confirm the attrition assumption with HR before publishing.",
+        "modelPrimary": "GPT-class frontier model via Azure OpenAI, private endpoint",
+        "modelFallback": "Deterministic rules-only mode — the agent degrades to mechanical checks and escalates everything else",
+        "promptVersioning": "TBC",
+        "hitlMode": "approve-before-commit",
+        "hitlGate": "QA reviewer accepts or overrides every exception classification; disposition always human",
+        "hitlSlaMinutes": 480,
+        "overrideRatePct": 9.1,
+        "tools": [
+          {
+            "name": "prodline-batch-record",
+            "type": "mcp",
+            "access": "read",
+            "scope": "Per-site; three separate connections"
+          },
+          {
+            "name": "labcore-results",
+            "type": "mcp",
+            "access": "read",
+            "scope": "Results and specifications"
+          },
+          {
+            "name": "qualisphere-deviation",
+            "type": "mcp",
+            "access": "read-write",
+            "scope": "Create draft deviations; cannot close or approve"
+          },
+          {
+            "name": "auriga-batch-master",
+            "type": "mcp",
+            "access": "read",
+            "scope": "Batch and material master"
+          },
+          {
+            "name": "docuvault-attachments",
+            "type": "mcp",
+            "access": "read",
+            "scope": "Batch record attachments; effective versions only"
+          }
+        ],
+        "dataClassifications": [
+          "restricted",
+          "gxp"
+        ],
+        "residency": "us",
+        "retention": "Run state 90 days; span skeletons 400 days",
+        "trainingUse": "prohibited",
+        "telemetryEmits": "otel",
+        "semconv": "gen_ai.* (experimental)",
+        "telemetryExportsTo": "cp-otel",
+        "coverage": {
+          "traces": "full",
+          "metrics": "full",
+          "cost": "full",
+          "toolCalls": "full",
+          "humanFeedback": "partial",
+          "evaluations": "none"
+        },
+        "telemetryGaps": [
+          "Per-check outcomes are not individually spanned — a failed review shows as one span, so you cannot tell which of the 140 checks is degrading",
+          "Scanned attachments pulled from DocuVault are silently skipped when OCR fails; no span event is emitted for the skip, so the gap is invisible in the telemetry"
+        ],
+        "gxpRelevant": true,
+        "part11Scope": true,
+        "validationStatus": "validated",
+        "validationRef": "VAL-2026-0208",
+        "periodicReview": "2026-10-15",
+        "modelRiskTier": 1,
+        "regulatoryExposure": "Direct and severe. A missed review finding is a potential FDA observation.",
+        "controls": [
+          {
+            "id": "ctl-hitl",
+            "name": "Human approval before commit",
+            "statement": "An agent may draft a regulated record but a qualified human commits it.",
+            "verification": "Telemetry — every write span to a GxP system must be preceded by an approval span carrying an approver identity. Enforced by a warehouse assertion, alerted on breach.",
+            "basis": [
+              "GxP",
+              "21 CFR Part 11 §11.10(d)"
+            ]
+          },
+          {
+            "id": "ctl-audit-trail",
+            "name": "Attributable, contemporaneous audit trail",
+            "statement": "Every agent action against a regulated system is attributable to a named agent identity and reconstructable after the fact.",
+            "verification": "Agent runs on a dedicated workload identity; run id is written into the target system's audit field; span skeleton retained 400 days.",
+            "basis": [
+              "21 CFR Part 11 §11.10(e)",
+              "ALCOA+"
+            ]
+          },
+          {
+            "id": "ctl-no-disposition",
+            "name": "No autonomous lot disposition",
+            "statement": "Lot release remains with the designated QA signatory. Agents may recommend, never dispose.",
+            "verification": "SAP authorisation object excludes agent principals; disposition spans carry a human actor or the assertion fails.",
+            "basis": [
+              "EU GMP Annex 16",
+              "GxP"
+            ]
+          },
+          {
+            "id": "ctl-eval-gate",
+            "name": "Evaluation gate before promotion",
+            "statement": "No agent version reaches production without passing the central golden-set evaluation at or above its registered threshold.",
+            "verification": "Deployment platform blocks promotion on a failing cp-eval score. Scores are written back as evaluation spans.",
+            "basis": [
+              "Model risk framework"
+            ]
+          },
+          {
+            "id": "ctl-degraded-mode",
+            "name": "Defined degraded mode",
+            "statement": "Every agent has a defined behaviour when its model is unavailable, and that behaviour fails closed to a human.",
+            "verification": "Declared in the manifest and exercised in the annual continuity test.",
+            "basis": [
+              "Business continuity policy"
+            ]
+          }
+        ],
+        "annualRunCostUsd": 340000,
+        "annualBenefitUsd": 2600000,
+        "benefitBasis": "Six days of released working capital plus avoided review capacity.",
+        "costConfidence": "declared",
+        "benefitConfidence": "seed",
+        "runsPerMonth": 440,
+        "successRatePct": 91.3,
+        "p50LatencySeconds": 380,
+        "p95LatencySeconds": 2100,
+        "escalationRatePct": 22.7,
+        "openQuestions": [
+          "The DocuVault OCR gap caps this agent's coverage on older batches. Was that flagged at handover, and is it in anyone's backlog?",
+          "Per-site MES integrations were built three times. Is there a consolidation plan or is this now permanent?",
+          "8.7% of runs fail. What is the failure taxonomy and who watches it?"
+        ],
+        "findings": [
+          {
+            "id": "no-eval",
+            "severity": "warning",
+            "label": "No offline evaluation"
+          }
+        ]
+      },
+      "externalRefs": {
+        "manifest": "model/agents/agt-batch-review.yaml"
+      }
+    },
+    {
+      "id": "agt-medinfo",
+      "type": "Agent",
+      "lens": "it",
+      "level": "T1",
+      "name": "Veterinary Medical Information Agent",
+      "description": "Answers veterinarian and producer product questions strictly from the approved standard-response library, and forwards any possible adverse event to safety.",
+      "code": "",
+      "owner": "Digital Workplace",
+      "lifecycle": "active",
+      "criticality": "high",
+      "health": "watch",
+      "maturity": 0,
+      "tags": [
+        "agent",
+        "copilot-studio",
+        "non-gxp",
+        "production"
+      ],
+      "props": {
+        "shortName": "Med Info",
+        "version": "3.0.1",
+        "status": "production",
+        "confidence": "seed",
+        "framework": "copilot-studio",
+        "frameworkVersion": "current",
+        "orchestrationStyle": "Topic-driven with generative answers constrained to a curated knowledge source",
+        "interop": "Power Platform connectors",
+        "runtime": "rt-copilot-studio",
+        "builtBy": "PwC (v1) → Digital Workplace (v2–v3)",
+        "deliveredOn": "2025-11-14",
+        "handoverStatus": "complete",
+        "sourceAvailable": true,
+        "sourceLocation": "Power Platform solution, exported to internal GitLab on each release",
+        "businessOwner": "Head of Veterinary Medical Information",
+        "technicalOwner": "Digital Workplace",
+        "accountableExecutive": "VP, Commercial Operations",
+        "replacesRole": "Medical Information Specialist (tier-1 response)",
+        "fteEquivalent": 8,
+        "displacementType": "channel-shift",
+        "retainedByHumans": [
+          "Any inquiry not answerable from the approved library",
+          "Authoring and approval of new standard responses"
+        ],
+        "replacesNote": "Largest displacement in the estate and the most externally visible. Every answer is regulated speech.",
+        "modelPrimary": "Copilot Studio managed model",
+        "modelFallback": "Deflect to human queue",
+        "promptVersioning": "Solution-versioned; instructions travel with the Power Platform solution export",
+        "hitlMode": "autonomous-with-escalation",
+        "hitlGate": "Answers from the library go out unreviewed. Anything off-library escalates to a specialist.",
+        "hitlSlaMinutes": 0,
+        "overrideRatePct": 3.1,
+        "tools": [
+          {
+            "name": "docuvault-srl",
+            "type": "connector",
+            "access": "read",
+            "scope": "Mirror of the approved standard-response library"
+          },
+          {
+            "name": "vetconnect-case",
+            "type": "connector",
+            "access": "read-write",
+            "scope": "Create and update medical information cases"
+          },
+          {
+            "name": "safetyvault-handoff",
+            "type": "connector",
+            "access": "write",
+            "scope": "Create a PV intake record for any suspected adverse event"
+          }
+        ],
+        "dataClassifications": [
+          "confidential",
+          "personal-data"
+        ],
+        "residency": "us",
+        "retention": "Dataverse transcripts 180 days",
+        "trainingUse": "prohibited",
+        "telemetryEmits": "appinsights-otel",
+        "semconv": "OpenTelemetry-aligned spans via Copilot Studio environment telemetry export",
+        "telemetryExportsTo": "cp-otel",
+        "coverage": {
+          "traces": "full",
+          "metrics": "full",
+          "cost": "partial",
+          "toolCalls": "full",
+          "humanFeedback": "full",
+          "evaluations": "full"
+        },
+        "telemetryGaps": [
+          "Copilot Studio message-level cost is reported in Copilot Credits, not tokens — cost comparison against the other four agents requires a conversion assumption",
+          "Best-instrumented agent in the estate. Use it as the reference implementation."
+        ],
+        "gxpRelevant": false,
+        "part11Scope": false,
+        "validationStatus": "not-required",
+        "validationRef": "Promotional/medical review under SOP-MI-014",
+        "periodicReview": "2026-11-01",
+        "modelRiskTier": 2,
+        "regulatoryExposure": "High but indirect. Off-label statement is a regulatory event even though no submission is produced.",
+        "controls": [
+          {
+            "id": "ctl-audit-trail",
+            "name": "Attributable, contemporaneous audit trail",
+            "statement": "Every agent action against a regulated system is attributable to a named agent identity and reconstructable after the fact.",
+            "verification": "Agent runs on a dedicated workload identity; run id is written into the target system's audit field; span skeleton retained 400 days.",
+            "basis": [
+              "21 CFR Part 11 §11.10(e)",
+              "ALCOA+"
+            ]
+          },
+          {
+            "id": "ctl-label-boundary",
+            "name": "Approved-label boundary",
+            "statement": "Externally facing agents answer only from approved, effective, version-controlled content and refuse to compose beyond it.",
+            "verification": "Every externally facing answer span carries the source document id and version. Answers without a source are blocked and counted.",
+            "basis": [
+              "Promotional compliance",
+              "SOP-MI-014"
+            ]
+          },
+          {
+            "id": "ctl-ae-detection",
+            "name": "Adverse event detection and handoff",
+            "statement": "Any agent in contact with customers must detect a possible adverse event and route it to pharmacovigilance within the regulatory clock.",
+            "verification": "Recall measured monthly against a human-labelled sample; handoff latency measured from the interaction span.",
+            "basis": [
+              "Pharmacovigilance obligations"
+            ]
+          },
+          {
+            "id": "ctl-eval-gate",
+            "name": "Evaluation gate before promotion",
+            "statement": "No agent version reaches production without passing the central golden-set evaluation at or above its registered threshold.",
+            "verification": "Deployment platform blocks promotion on a failing cp-eval score. Scores are written back as evaluation spans.",
+            "basis": [
+              "Model risk framework"
+            ]
+          }
+        ],
+        "annualRunCostUsd": 155000,
+        "annualBenefitUsd": 1180000,
+        "benefitBasis": "Tier-1 deflection at 71% of inquiry volume; SLA recovery during seasonal peaks.",
+        "costConfidence": "declared",
+        "benefitConfidence": "declared",
+        "runsPerMonth": 5900,
+        "successRatePct": 97.9,
+        "p50LatencySeconds": 6,
+        "p95LatencySeconds": 24,
+        "escalationRatePct": 28.6,
+        "openQuestions": [
+          "Autonomous answering is the only unreviewed agent output reaching an external audience. Is the AE-detection recall measured, and against what?",
+          "Copilot Credit to token conversion needs an agreed factor before cost comparisons across frameworks mean anything."
+        ],
+        "findings": [
+          {
+            "id": "unreviewed-external",
+            "severity": "warning",
+            "label": "Autonomous output reaching an external audience"
+          }
+        ]
+      },
+      "externalRefs": {
+        "manifest": "model/agents/agt-medinfo.yaml"
+      }
+    },
+    {
+      "id": "agt-pv-intake",
+      "type": "Agent",
+      "lens": "it",
+      "level": "T1",
+      "name": "Pharmacovigilance Case Intake Agent",
+      "description": "Receives, deduplicates, validates and drafts veterinary adverse event cases up to the point of medical assessment.",
+      "code": "",
+      "owner": "CoE Platform Engineering",
+      "lifecycle": "active",
+      "criticality": "critical",
+      "health": "watch",
+      "maturity": 0,
+      "tags": [
+        "agent",
+        "gxp",
+        "production",
+        "pwc-agent-os"
+      ],
+      "props": {
+        "shortName": "PV Intake",
+        "version": "2.1.0",
+        "status": "production",
+        "confidence": "seed",
+        "framework": "pwc-agent-os",
+        "frameworkVersion": "TBC",
+        "orchestrationStyle": "Deterministic flow with LLM steps; not free-running ReAct",
+        "interop": "MCP for all tool access",
+        "runtime": "rt-agentos-azure",
+        "builtBy": "PwC",
+        "deliveredOn": "2026-03-02",
+        "handoverStatus": "partial",
+        "sourceAvailable": true,
+        "sourceLocation": "TBC — confirm whether flow definitions, prompts and eval sets were delivered as artefacts or live only in the agent OS workspace",
+        "businessOwner": "Head of Global PV Operations",
+        "technicalOwner": "CoE Platform Engineering",
+        "accountableExecutive": "VP, Global Animal Health Safety",
+        "replacesRole": "Pharmacovigilance Case Intake Specialist",
+        "fteEquivalent": 3.5,
+        "displacementType": "task-absorption",
+        "retainedByHumans": [
+          "Medical assessment and causality",
+          "Final case approval before regulatory submission"
+        ],
+        "replacesNote": "Headcount moved to case investigation and signal detection rather than being cut. Confirm before repeating this claim externally.",
+        "modelPrimary": "GPT-class frontier model via Azure OpenAI, private endpoint",
+        "modelFallback": "Same family, previous version, pinned",
+        "promptVersioning": "TBC — confirm prompts are versioned artefacts, not console state",
+        "hitlMode": "approve-before-commit",
+        "hitlGate": "Safety physician confirms validity, seriousness and narrative before the case advances",
+        "hitlSlaMinutes": 240,
+        "overrideRatePct": 6.4,
+        "tools": [
+          {
+            "name": "safetyvault-case-api",
+            "type": "mcp",
+            "access": "read-write",
+            "scope": "Create and update draft cases only; cannot submit"
+          },
+          {
+            "name": "docuvault-rsi-search",
+            "type": "mcp",
+            "access": "read",
+            "scope": "Reference safety information for expectedness"
+          },
+          {
+            "name": "vetsupport-intake-mail",
+            "type": "mcp",
+            "access": "read",
+            "scope": "Designated PV intake mailbox only"
+          },
+          {
+            "name": "literature-feed",
+            "type": "http",
+            "access": "read",
+            "scope": "Licensed abstract feed"
+          }
+        ],
+        "dataClassifications": [
+          "restricted",
+          "gxp",
+          "personal-data"
+        ],
+        "residency": "us",
+        "retention": "Run state 90 days; span skeletons 400 days; payload bodies never leave the landing zone",
+        "trainingUse": "prohibited",
+        "telemetryEmits": "otel",
+        "semconv": "gen_ai.* (experimental)",
+        "telemetryExportsTo": "cp-otel",
+        "coverage": {
+          "traces": "full",
+          "metrics": "full",
+          "cost": "full",
+          "toolCalls": "full",
+          "humanFeedback": "partial",
+          "evaluations": "none"
+        },
+        "telemetryGaps": [
+          "Human override reason codes are captured in the agent OS UI but not emitted as span attributes — the single most valuable signal is stranded in the vendor dashboard",
+          "No offline evaluation runs. Quality is inferred from override rate only."
+        ],
+        "gxpRelevant": true,
+        "part11Scope": true,
+        "validationStatus": "validated",
+        "validationRef": "VAL-2026-0113",
+        "periodicReview": "2026-09-30",
+        "modelRiskTier": 2,
+        "regulatoryExposure": "Direct. Output becomes part of a regulatory submission of record.",
+        "controls": [
+          {
+            "id": "ctl-hitl",
+            "name": "Human approval before commit",
+            "statement": "An agent may draft a regulated record but a qualified human commits it.",
+            "verification": "Telemetry — every write span to a GxP system must be preceded by an approval span carrying an approver identity. Enforced by a warehouse assertion, alerted on breach.",
+            "basis": [
+              "GxP",
+              "21 CFR Part 11 §11.10(d)"
+            ]
+          },
+          {
+            "id": "ctl-audit-trail",
+            "name": "Attributable, contemporaneous audit trail",
+            "statement": "Every agent action against a regulated system is attributable to a named agent identity and reconstructable after the fact.",
+            "verification": "Agent runs on a dedicated workload identity; run id is written into the target system's audit field; span skeleton retained 400 days.",
+            "basis": [
+              "21 CFR Part 11 §11.10(e)",
+              "ALCOA+"
+            ]
+          },
+          {
+            "id": "ctl-no-submit",
+            "name": "No autonomous regulatory transmission",
+            "statement": "No agent holds credentials to the regulatory gateway. Transmission is a human-authorised act.",
+            "verification": "IAM — the gateway's access policy contains no agent principals. Verified in the quarterly access review and by a CI check against the manifest.",
+            "basis": [
+              "GxP"
+            ]
+          },
+          {
+            "id": "ctl-eval-gate",
+            "name": "Evaluation gate before promotion",
+            "statement": "No agent version reaches production without passing the central golden-set evaluation at or above its registered threshold.",
+            "verification": "Deployment platform blocks promotion on a failing cp-eval score. Scores are written back as evaluation spans.",
+            "basis": [
+              "Model risk framework"
+            ]
+          },
+          {
+            "id": "ctl-payload-residency",
+            "name": "Payload stays in the regulated boundary",
+            "statement": "Prompt and response bodies containing GxP or personal data never leave the runtime that produced them. Only redacted span skeletons and payload references are exported.",
+            "verification": "Collector configuration is code-reviewed; the central pipeline rejects any span carrying gen_ai content attributes.",
+            "basis": [
+              "GDPR",
+              "Data classification policy"
+            ]
+          }
+        ],
+        "annualRunCostUsd": 214000,
+        "annualBenefitUsd": 890000,
+        "benefitBasis": "Avoided contract intake capacity plus backlog reduction. Not a headcount reduction.",
+        "costConfidence": "declared",
+        "benefitConfidence": "seed",
+        "runsPerMonth": 4100,
+        "successRatePct": 96.8,
+        "p50LatencySeconds": 42,
+        "p95LatencySeconds": 310,
+        "escalationRatePct": 11.2,
+        "openQuestions": [
+          "Are the flow definitions, prompts and tool schemas exportable as version-controlled artefacts, or does the configuration live only in the agent OS workspace?",
+          "What happens to this agent when the PwC engagement ends — who holds the runbook?",
+          "Is there a golden evaluation set from the build phase, and was it delivered?",
+          "Does the validation package (VAL-2026-0113) cover model version changes, or does every model update reopen validation?"
+        ],
+        "findings": [
+          {
+            "id": "no-eval",
+            "severity": "warning",
+            "label": "No offline evaluation"
+          }
+        ]
+      },
+      "externalRefs": {
+        "manifest": "model/agents/agt-pv-intake.yaml"
+      }
+    },
+    {
+      "id": "agt-reg-assembly",
+      "type": "Agent",
+      "lens": "it",
+      "level": "T1",
+      "name": "Regulatory Submission Assembly Agent",
+      "description": "Plans, assembles and technically validates eCTD/VNeeS dossiers per market, remediating mechanical validation failures automatically.",
+      "code": "",
+      "owner": "UNASSIGNED",
+      "lifecycle": "active",
+      "criticality": "critical",
+      "health": "at-risk",
+      "maturity": 0,
+      "tags": [
+        "agent",
+        "gxp",
+        "production",
+        "pwc-agent-os"
+      ],
+      "props": {
+        "shortName": "Reg Assembly",
+        "version": "1.2.0",
+        "status": "production",
+        "confidence": "seed",
+        "framework": "pwc-agent-os",
+        "frameworkVersion": "TBC",
+        "orchestrationStyle": "Planner + worker; the planner derives the required section list per market",
+        "interop": "MCP for all tool access",
+        "runtime": "rt-agentos-azure",
+        "builtBy": "PwC",
+        "deliveredOn": "2026-05-30",
+        "handoverStatus": "none",
+        "sourceAvailable": false,
+        "sourceLocation": "TBC — believed to live entirely in the PwC-managed agent OS workspace",
+        "businessOwner": "Director, Regulatory Operations",
+        "technicalOwner": "UNASSIGNED",
+        "accountableExecutive": "VP, Global Regulatory Affairs",
+        "replacesRole": "Regulatory Publishing Associate",
+        "fteEquivalent": 5,
+        "displacementType": "task-absorption",
+        "retainedByHumans": [
+          "Regulatory QC review",
+          "Authority transmission — agent has no gateway access by design"
+        ],
+        "replacesNote": "Three contract publishing associates not renewed. Two internal associates moved to strategy roles.",
+        "modelPrimary": "GPT-class frontier model via Azure OpenAI, private endpoint",
+        "modelFallback": "None configured",
+        "promptVersioning": "TBC",
+        "hitlMode": "review-after-produce",
+        "hitlGate": "Regulatory QC reviews the assembled dossier before transmission",
+        "hitlSlaMinutes": 2880,
+        "overrideRatePct": 14.8,
+        "tools": [
+          {
+            "name": "docuvault-doc-retrieve",
+            "type": "mcp",
+            "access": "read",
+            "scope": "Approved documents only; effective versions"
+          },
+          {
+            "name": "regdossier-submission",
+            "type": "mcp",
+            "access": "read-write",
+            "scope": "Build and modify submission structures; cannot transmit"
+          },
+          {
+            "name": "ectd-validator",
+            "type": "http",
+            "access": "execute",
+            "scope": "Third-party validation engine"
+          }
+        ],
+        "dataClassifications": [
+          "confidential",
+          "gxp"
+        ],
+        "residency": "us",
+        "retention": "Run state 90 days; span skeletons 400 days",
+        "trainingUse": "prohibited",
+        "telemetryEmits": "native-only",
+        "semconv": "none — vendor dashboard only",
+        "telemetryExportsTo": "none",
+        "coverage": {
+          "traces": "partial",
+          "metrics": "partial",
+          "cost": "none",
+          "toolCalls": "partial",
+          "humanFeedback": "none",
+          "evaluations": "none"
+        },
+        "telemetryGaps": [
+          "This agent is NOT wired to the shared collector. Everything known about it comes from the vendor dashboard, which the CoE cannot query.",
+          "No cost attribution at all. Its share of the Azure OpenAI bill is unknown.",
+          "Highest-priority remediation in the estate."
+        ],
+        "gxpRelevant": true,
+        "part11Scope": true,
+        "validationStatus": "pending",
+        "validationRef": "VAL-2026-0341 (draft)",
+        "periodicReview": "not scheduled",
+        "modelRiskTier": 2,
+        "regulatoryExposure": "Direct. Output is the submission itself.",
+        "controls": [
+          {
+            "id": "ctl-audit-trail",
+            "name": "Attributable, contemporaneous audit trail",
+            "statement": "Every agent action against a regulated system is attributable to a named agent identity and reconstructable after the fact.",
+            "verification": "Agent runs on a dedicated workload identity; run id is written into the target system's audit field; span skeleton retained 400 days.",
+            "basis": [
+              "21 CFR Part 11 §11.10(e)",
+              "ALCOA+"
+            ]
+          },
+          {
+            "id": "ctl-no-submit",
+            "name": "No autonomous regulatory transmission",
+            "statement": "No agent holds credentials to the regulatory gateway. Transmission is a human-authorised act.",
+            "verification": "IAM — the gateway's access policy contains no agent principals. Verified in the quarterly access review and by a CI check against the manifest.",
+            "basis": [
+              "GxP"
+            ]
+          },
+          {
+            "id": "ctl-payload-residency",
+            "name": "Payload stays in the regulated boundary",
+            "statement": "Prompt and response bodies containing GxP or personal data never leave the runtime that produced them. Only redacted span skeletons and payload references are exported.",
+            "verification": "Collector configuration is code-reviewed; the central pipeline rejects any span carrying gen_ai content attributes.",
+            "basis": [
+              "GDPR",
+              "Data classification policy"
+            ]
+          }
+        ],
+        "annualRunCostUsd": 0,
+        "annualBenefitUsd": 1400000,
+        "benefitBasis": "12 days off assembly cycle time across 640 submissions, plus contract publishing spend avoided.",
+        "costConfidence": "seed",
+        "benefitConfidence": "seed",
+        "runsPerMonth": 53,
+        "successRatePct": 88,
+        "p50LatencySeconds": 1450,
+        "p95LatencySeconds": 6200,
+        "escalationRatePct": 31,
+        "openQuestions": [
+          "Running in production against regulatory submissions with validation still in draft. Is that a knowing risk acceptance, and who signed it?",
+          "No technical owner is assigned. Who is on call when it breaks?",
+          "No telemetry export, no cost attribution, no evaluation. This agent is effectively unmanaged."
+        ],
+        "findings": [
+          {
+            "id": "no-owner",
+            "severity": "critical",
+            "label": "No technical owner"
+          },
+          {
+            "id": "unvalidated-gxp",
+            "severity": "critical",
+            "label": "In production against GxP scope without completed validation"
+          },
+          {
+            "id": "no-telemetry",
+            "severity": "serious",
+            "label": "Not exporting telemetry to the central pipeline"
+          },
+          {
+            "id": "no-cost",
+            "severity": "serious",
+            "label": "No cost attribution"
+          },
+          {
+            "id": "no-eval",
+            "severity": "warning",
+            "label": "No offline evaluation"
+          },
+          {
+            "id": "no-fallback",
+            "severity": "warning",
+            "label": "No defined degraded mode"
+          },
+          {
+            "id": "no-source",
+            "severity": "warning",
+            "label": "Source artefacts not held by the enterprise"
+          },
+          {
+            "id": "no-review",
+            "severity": "warning",
+            "label": "No periodic review scheduled"
+          }
+        ]
+      },
+      "externalRefs": {
+        "manifest": "model/agents/agt-reg-assembly.yaml"
+      }
+    },
+    {
+      "id": "agt-supplier-triage",
+      "type": "Agent",
+      "lens": "it",
+      "level": "T1",
+      "name": "Supplier Nonconformance Triage Agent",
+      "description": "Triages incoming-material nonconformances, traces affected lots into consuming batches, and drafts supplier CAPA requests.",
+      "code": "",
+      "owner": "Data & Analytics Engineering",
+      "lifecycle": "plan",
+      "criticality": "high",
+      "health": "ok",
+      "maturity": 0,
+      "tags": [
+        "agent",
+        "dify",
+        "gxp",
+        "pilot"
+      ],
+      "props": {
+        "shortName": "Supplier Triage",
+        "version": "0.9.1",
+        "status": "pilot",
+        "confidence": "seed",
+        "framework": "dify",
+        "frameworkVersion": "1.x self-hosted",
+        "orchestrationStyle": "Dify workflow — nodes for retrieval, classification, trace and draft",
+        "interop": "HTTP tool nodes; no MCP",
+        "runtime": "rt-dify-onprem",
+        "builtBy": "Internal — Data & Analytics Engineering",
+        "deliveredOn": "2026-06-11",
+        "handoverStatus": "n/a",
+        "sourceAvailable": true,
+        "sourceLocation": "Internal GitLab, dify-apps/supplier-triage",
+        "businessOwner": "Director, Supplier Quality",
+        "technicalOwner": "Data & Analytics Engineering",
+        "accountableExecutive": "VP, Supply Chain",
+        "replacesRole": "Supplier Quality Analyst (triage portion)",
+        "fteEquivalent": 2.5,
+        "displacementType": "task-absorption",
+        "retainedByHumans": [
+          "Supplier requalification decision",
+          "Any nonconformance touching a released lot"
+        ],
+        "replacesNote": "",
+        "modelPrimary": "Internally hosted open-weight model via vLLM gateway",
+        "modelFallback": "Brokered frontier model through the enterprise AI gateway, payload logging disabled",
+        "promptVersioning": "Git — prompts are files in the repository",
+        "hitlMode": "approve-before-commit",
+        "hitlGate": "Supplier quality analyst approves impact assessment and any outbound supplier communication",
+        "hitlSlaMinutes": 960,
+        "overrideRatePct": 18.2,
+        "tools": [
+          {
+            "name": "auriga-material-trace",
+            "type": "http",
+            "access": "read",
+            "scope": "Batch genealogy"
+          },
+          {
+            "name": "qualisphere-ncr",
+            "type": "http",
+            "access": "read-write",
+            "scope": "Create draft NCR and supplier CAPA records"
+          },
+          {
+            "name": "supplierhub-notify",
+            "type": "http",
+            "access": "write",
+            "scope": "Draft only — never sends without approval"
+          }
+        ],
+        "dataClassifications": [
+          "confidential",
+          "gxp"
+        ],
+        "residency": "us-onprem",
+        "retention": "Traces 180 days in self-hosted Langfuse",
+        "trainingUse": "Permitted on internal data with DPIA on file",
+        "telemetryEmits": "otel",
+        "semconv": "gen_ai.* via Langfuse OTLP",
+        "telemetryExportsTo": "cp-otel",
+        "coverage": {
+          "traces": "full",
+          "metrics": "partial",
+          "cost": "partial",
+          "toolCalls": "full",
+          "humanFeedback": "full",
+          "evaluations": "partial"
+        },
+        "telemetryGaps": [
+          "Dify supports one tracing backend per workflow app, so the collector must fan out rather than the app",
+          "Token cost for the internally hosted model is modelled, not metered"
+        ],
+        "gxpRelevant": true,
+        "part11Scope": false,
+        "validationStatus": "not-required",
+        "validationRef": "Pilot under QA-approved non-GxP scope; becomes GxP if it writes to a released lot",
+        "periodicReview": "2026-12-01",
+        "modelRiskTier": 3,
+        "regulatoryExposure": "Indirect. Drafts only; a human commits every quality record.",
+        "controls": [
+          {
+            "id": "ctl-hitl",
+            "name": "Human approval before commit",
+            "statement": "An agent may draft a regulated record but a qualified human commits it.",
+            "verification": "Telemetry — every write span to a GxP system must be preceded by an approval span carrying an approver identity. Enforced by a warehouse assertion, alerted on breach.",
+            "basis": [
+              "GxP",
+              "21 CFR Part 11 §11.10(d)"
+            ]
+          },
+          {
+            "id": "ctl-audit-trail",
+            "name": "Attributable, contemporaneous audit trail",
+            "statement": "Every agent action against a regulated system is attributable to a named agent identity and reconstructable after the fact.",
+            "verification": "Agent runs on a dedicated workload identity; run id is written into the target system's audit field; span skeleton retained 400 days.",
+            "basis": [
+              "21 CFR Part 11 §11.10(e)",
+              "ALCOA+"
+            ]
+          },
+          {
+            "id": "ctl-eval-gate",
+            "name": "Evaluation gate before promotion",
+            "statement": "No agent version reaches production without passing the central golden-set evaluation at or above its registered threshold.",
+            "verification": "Deployment platform blocks promotion on a failing cp-eval score. Scores are written back as evaluation spans.",
+            "basis": [
+              "Model risk framework"
+            ]
+          }
+        ],
+        "annualRunCostUsd": 62000,
+        "annualBenefitUsd": 410000,
+        "benefitBasis": "Triage time from 6.5 days to under 1; avoided expedite freight on misclassified material.",
+        "costConfidence": "evidenced",
+        "benefitConfidence": "seed",
+        "runsPerMonth": 285,
+        "successRatePct": 94.1,
+        "p50LatencySeconds": 95,
+        "p95LatencySeconds": 520,
+        "escalationRatePct": 16.4,
+        "openQuestions": [
+          "Pilot exit criteria are not written down. What has to be true to promote this to production?",
+          "If it starts touching released lots it becomes GxP overnight. Is there a tripwire for that?"
+        ],
+        "findings": []
+      },
+      "externalRefs": {
+        "manifest": "model/agents/agt-supplier-triage.yaml"
+      }
+    },
+    {
       "id": "app-archimap",
       "type": "Application",
       "lens": "it",
@@ -3797,6 +4687,156 @@ export const NODES_DOCUMENT = {
       "externalRefs": {
         "pcf": "4.3"
       }
+    },
+    {
+      "id": "cp-atlas",
+      "type": "PlatformService",
+      "lens": "it",
+      "level": "T4",
+      "name": "Enterprise Map — agent estate view",
+      "description": "The executive-to-infrastructure view. Reads the registry and the warehouse; writes nothing.",
+      "code": "",
+      "owner": "AI Center of Excellence",
+      "lifecycle": "active",
+      "criticality": "medium",
+      "health": "ok",
+      "maturity": 0,
+      "tags": [
+        "agent-control-plane",
+        "experience"
+      ],
+      "props": {
+        "layer": "experience",
+        "implementation": "The Enterprise Map application in app/. Agent nodes are compiled from model/agents/*.yaml; live metrics come from cp-warehouse",
+        "inRequestPath": false,
+        "note": ""
+      },
+      "externalRefs": {}
+    },
+    {
+      "id": "cp-eval",
+      "type": "PlatformService",
+      "lens": "it",
+      "level": "T4",
+      "name": "Central Evaluation & Scorecard",
+      "description": "One evaluation harness for every agent regardless of framework. Golden sets, regression gates, drift detection and the periodic review evidence GxP validation depends on.",
+      "code": "",
+      "owner": "AI Center of Excellence + Quality Assurance",
+      "lifecycle": "active",
+      "criticality": "medium",
+      "health": "ok",
+      "maturity": 0,
+      "tags": [
+        "agent-control-plane",
+        "assurance"
+      ],
+      "props": {
+        "layer": "assurance",
+        "implementation": "Scheduled jobs that call each agent through its own public interface, score against a versioned golden set, and write scores back as gen_ai.evaluation.* spans",
+        "inRequestPath": false,
+        "note": "This is the one thing deliberately NOT federated. A vendor grading its own homework is not evidence."
+      },
+      "externalRefs": {}
+    },
+    {
+      "id": "cp-otel",
+      "type": "PlatformService",
+      "lens": "it",
+      "level": "T4",
+      "name": "Conformed Telemetry Pipeline",
+      "description": "A central OTLP endpoint that accepts already-redacted spans from every runtime's local collector, normalises them to a single schema, and lands them in the warehouse.",
+      "code": "",
+      "owner": "CoE Platform Engineering",
+      "lifecycle": "active",
+      "criticality": "medium",
+      "health": "ok",
+      "maturity": 0,
+      "tags": [
+        "agent-control-plane",
+        "observability"
+      ],
+      "props": {
+        "layer": "observability",
+        "implementation": "OpenTelemetry Collector (gateway mode) → Azure Data Explorer. Enforces the gen_ai.* semantic conventions; rejects spans missing agent.id, run.id or a payload reference.",
+        "inRequestPath": false,
+        "note": "Receives telemetry only. It never proxies an agent call, so it cannot take an agent down."
+      },
+      "externalRefs": {}
+    },
+    {
+      "id": "cp-policy",
+      "type": "PlatformService",
+      "lens": "it",
+      "level": "T4",
+      "name": "Policy & Guardrail Baseline",
+      "description": "The controls every agent must satisfy, expressed once and verified per runtime. Not a runtime proxy — a conformance contract checked in CI and audited from telemetry.",
+      "code": "",
+      "owner": "AI Governance Board",
+      "lifecycle": "active",
+      "criticality": "medium",
+      "health": "ok",
+      "maturity": 0,
+      "tags": [
+        "agent-control-plane",
+        "governance"
+      ],
+      "props": {
+        "layer": "governance",
+        "implementation": "Policy set in the deployment platform; per-runtime attestation; CI check against the manifest",
+        "inRequestPath": false,
+        "note": ""
+      },
+      "externalRefs": {}
+    },
+    {
+      "id": "cp-registry",
+      "type": "PlatformService",
+      "lens": "it",
+      "level": "T4",
+      "name": "Agent Registry",
+      "description": "The system of record for what agents exist. Stores one Agent Operating Manifest per agent, version-controlled in this repository and mirrored to the deployment platform.",
+      "code": "",
+      "owner": "AI Center of Excellence",
+      "lifecycle": "active",
+      "criticality": "medium",
+      "health": "ok",
+      "maturity": 0,
+      "tags": [
+        "agent-control-plane",
+        "governance"
+      ],
+      "props": {
+        "layer": "governance",
+        "implementation": "model/agents/*.yaml in git → validated by CI → published to the enterprise deployment platform as the intake artifact",
+        "inRequestPath": false,
+        "note": ""
+      },
+      "externalRefs": {}
+    },
+    {
+      "id": "cp-warehouse",
+      "type": "PlatformService",
+      "lens": "it",
+      "level": "T4",
+      "name": "Agent Operations Warehouse",
+      "description": "Query surface over conformed runs: cost, latency, escalation rate, override rate, per-process throughput. The numbers behind the agent estate view.",
+      "code": "",
+      "owner": "CoE Platform Engineering",
+      "lifecycle": "active",
+      "criticality": "medium",
+      "health": "ok",
+      "maturity": 0,
+      "tags": [
+        "agent-control-plane",
+        "observability"
+      ],
+      "props": {
+        "layer": "observability",
+        "implementation": "Azure Data Explorer; 400-day retention on span skeletons, 30-day on payload references",
+        "inRequestPath": false,
+        "note": ""
+      },
+      "externalRefs": {}
     },
     {
       "id": "ds-archimap-db",
@@ -15999,6 +17039,151 @@ export const NODES_DOCUMENT = {
       }
     },
     {
+      "id": "rt-agentos-azure",
+      "type": "AgentRuntime",
+      "lens": "it",
+      "level": "T4",
+      "name": "PwC agent OS — Azure landing zone",
+      "description": "Orchestration plane for the consultant-delivered agents. Runs the flow definitions, tool routing and MCP gateway.",
+      "code": "",
+      "owner": "PwC (build) → CoE Platform Engineering (run, from 2026-Q4)",
+      "lifecycle": "active",
+      "criticality": "critical",
+      "health": "ok",
+      "maturity": 0,
+      "tags": [
+        "agent-runtime",
+        "azure",
+        "gxp"
+      ],
+      "props": {
+        "cloud": "azure",
+        "region": "eastus2",
+        "operator": "PwC (build) → CoE Platform Engineering (run, from 2026-Q4)",
+        "gxpBoundary": true,
+        "compute": [
+          "AKS private cluster, 3 node pools, no public ingress",
+          "Azure Container Apps for MCP server sidecars"
+        ],
+        "identity": [
+          "Entra ID workload identity per agent; one app registration per agent, no shared service principals",
+          "Agent identities are first-class principals in the enterprise IAM review cycle"
+        ],
+        "network": [
+          "Private Endpoints to Vault, TrackWise and SAP; no direct internet egress from agent pods",
+          "Egress via Azure Firewall with FQDN allowlist"
+        ],
+        "dataResidency": [
+          "Azure AI Search (vector) — grounding index over Vault-sourced documents only",
+          "Cosmos DB — conversation and run state, 90-day TTL",
+          "No GxP source data is copied; grounding index stores pointers plus extracted text"
+        ],
+        "secrets": [
+          "Azure Key Vault, per-agent access policy, 90-day rotation"
+        ],
+        "telemetryNative": "agent OS governance dashboard — session tracking, execution history, per-step latency and cost, human-in-the-loop feedback",
+        "telemetryWire": "OpenTelemetry traces (gen_ai.* semantic conventions)",
+        "redactionPoint": "OTel Collector inside the AKS cluster — prompt/response bodies are hashed and replaced with a payload reference before any span leaves the landing zone",
+        "telemetryExportsTo": "cp-otel",
+        "confidence": "seed"
+      },
+      "externalRefs": {}
+    },
+    {
+      "id": "rt-copilot-studio",
+      "type": "AgentRuntime",
+      "lens": "it",
+      "level": "T4",
+      "name": "Microsoft Copilot Studio — Power Platform managed environment",
+      "description": "Low-code agents delivered in the Microsoft 365 surface. Where business users build, and where the medical information agent is consumed.",
+      "code": "",
+      "owner": "Digital Workplace",
+      "lifecycle": "active",
+      "criticality": "high",
+      "health": "ok",
+      "maturity": 0,
+      "tags": [
+        "agent-runtime",
+        "azure",
+        "non-gxp"
+      ],
+      "props": {
+        "cloud": "azure",
+        "region": "eastus2",
+        "operator": "Digital Workplace",
+        "gxpBoundary": false,
+        "compute": [
+          "Power Platform managed environment (Dataverse-backed), DLP policy enforced"
+        ],
+        "identity": [
+          "Entra ID; agent runs on-behalf-of the invoking user for Graph-scoped reads"
+        ],
+        "network": [
+          "Power Platform virtual network integration to reach Salesforce and Vault connectors privately"
+        ],
+        "dataResidency": [
+          "Dataverse — conversation transcripts, 180-day retention",
+          "Knowledge grounded on a SharePoint mirror of the approved standard-response library"
+        ],
+        "secrets": [
+          "Power Platform connection references + Key Vault-backed environment variables"
+        ],
+        "telemetryNative": "Copilot Studio analytics + environment-level agent telemetry export",
+        "telemetryWire": "OpenTelemetry-aligned spans exported to Azure Application Insights (agent invocation, tool call and message spans)",
+        "redactionPoint": "Application Insights ingestion-time transformation KQL — strips message bodies, keeps span skeleton, tool identity, latency, tokens",
+        "telemetryExportsTo": "cp-otel",
+        "confidence": "seed"
+      },
+      "externalRefs": {}
+    },
+    {
+      "id": "rt-dify-onprem",
+      "type": "AgentRuntime",
+      "lens": "it",
+      "level": "T4",
+      "name": "Dify — on-premises Kubernetes",
+      "description": "Self-hosted LLM app platform used where data residency or GxP boundary rules forbid vendor-cloud processing.",
+      "code": "",
+      "owner": "Data & Analytics Engineering",
+      "lifecycle": "active",
+      "criticality": "critical",
+      "health": "ok",
+      "maturity": 0,
+      "tags": [
+        "agent-runtime",
+        "gxp",
+        "on-prem"
+      ],
+      "props": {
+        "cloud": "on-prem",
+        "region": "DC-Kalamazoo",
+        "operator": "Data & Analytics Engineering",
+        "gxpBoundary": true,
+        "compute": [
+          "OpenShift cluster, dedicated namespace per app",
+          "Model serving via internal vLLM gateway plus brokered Azure OpenAI for frontier calls"
+        ],
+        "identity": [
+          "Internal OIDC provider federated to Entra ID; per-app service accounts"
+        ],
+        "network": [
+          "No internet egress. Frontier model calls proxied through the enterprise AI gateway with payload logging disabled."
+        ],
+        "dataResidency": [
+          "PostgreSQL + Weaviate in-cluster; all vectors derived from on-prem sources"
+        ],
+        "secrets": [
+          "HashiCorp Vault, Kubernetes auth method"
+        ],
+        "telemetryNative": "Dify tracing → self-hosted Langfuse",
+        "telemetryWire": "OTLP from the Langfuse/OTel collector pair; one tracing backend per workflow app is a Dify limitation, so the collector is the fan-out point",
+        "redactionPoint": "OTel Collector in-cluster — attribute processor drops gen_ai.*.content before export",
+        "telemetryExportsTo": "cp-otel",
+        "confidence": "seed"
+      },
+      "externalRefs": {}
+    },
+    {
       "id": "site-cloud-east",
       "type": "Site",
       "lens": "it",
@@ -16649,6 +17834,284 @@ export const EDGES_DOCUMENT = {
   "version": "1.0",
   "model": "Vetrellis Animal Health - demo enterprise model",
   "edges": [
+    {
+      "id": "agt-batch-review|depends_on|app-auriga-erp",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-auriga-erp",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-edms-docuvault",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-edms-docuvault",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-labcore-lims",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-labcore-lims",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-prodline-mes",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-prodline-mes",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-qualisphere-qms",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-qualisphere-qms",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|depends_on|app-releasedesk",
+      "type": "depends_on",
+      "from": "agt-batch-review",
+      "to": "app-releasedesk",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|runs_on|rt-agentos-azure",
+      "type": "runs_on",
+      "from": "agt-batch-review",
+      "to": "rt-agentos-azure",
+      "props": {}
+    },
+    {
+      "id": "agt-batch-review|supports|proc-batch-release-disposition",
+      "type": "supports",
+      "from": "agt-batch-review",
+      "to": "proc-batch-release-disposition",
+      "props": {
+        "cycleBeforeMinutes": 600,
+        "cycleAfterMinutes": 125,
+        "cycleUnit": "per batch"
+      }
+    },
+    {
+      "id": "agt-batch-review|supports|proc-deviation-management",
+      "type": "supports",
+      "from": "agt-batch-review",
+      "to": "proc-deviation-management",
+      "props": {
+        "cycleBeforeMinutes": 330,
+        "cycleAfterMinutes": 95,
+        "cycleUnit": "per deviation"
+      }
+    },
+    {
+      "id": "agt-medinfo|depends_on|app-edms-docuvault",
+      "type": "depends_on",
+      "from": "agt-medinfo",
+      "to": "app-edms-docuvault",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|depends_on|app-safetyvault",
+      "type": "depends_on",
+      "from": "agt-medinfo",
+      "to": "app-safetyvault",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|depends_on|app-vetconnect-crm",
+      "type": "depends_on",
+      "from": "agt-medinfo",
+      "to": "app-vetconnect-crm",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|depends_on|app-vetsupport-desk",
+      "type": "depends_on",
+      "from": "agt-medinfo",
+      "to": "app-vetsupport-desk",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|integrates_with|agt-pv-intake",
+      "type": "integrates_with",
+      "from": "agt-medinfo",
+      "to": "agt-pv-intake",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|runs_on|rt-copilot-studio",
+      "type": "runs_on",
+      "from": "agt-medinfo",
+      "to": "rt-copilot-studio",
+      "props": {}
+    },
+    {
+      "id": "agt-medinfo|supports|proc-case-intake-triage",
+      "type": "supports",
+      "from": "agt-medinfo",
+      "to": "proc-case-intake-triage",
+      "props": {
+        "cycleBeforeMinutes": 15,
+        "cycleAfterMinutes": 2,
+        "cycleUnit": "per inquiry"
+      }
+    },
+    {
+      "id": "agt-medinfo|supports|proc-technical-product-support",
+      "type": "supports",
+      "from": "agt-medinfo",
+      "to": "proc-technical-product-support",
+      "props": {
+        "cycleBeforeMinutes": 45,
+        "cycleAfterMinutes": 6,
+        "cycleUnit": "per inquiry"
+      }
+    },
+    {
+      "id": "agt-pv-intake|depends_on|app-edms-docuvault",
+      "type": "depends_on",
+      "from": "agt-pv-intake",
+      "to": "app-edms-docuvault",
+      "props": {}
+    },
+    {
+      "id": "agt-pv-intake|depends_on|app-safetyvault",
+      "type": "depends_on",
+      "from": "agt-pv-intake",
+      "to": "app-safetyvault",
+      "props": {}
+    },
+    {
+      "id": "agt-pv-intake|depends_on|app-vetsupport-desk",
+      "type": "depends_on",
+      "from": "agt-pv-intake",
+      "to": "app-vetsupport-desk",
+      "props": {}
+    },
+    {
+      "id": "agt-pv-intake|runs_on|rt-agentos-azure",
+      "type": "runs_on",
+      "from": "agt-pv-intake",
+      "to": "rt-agentos-azure",
+      "props": {}
+    },
+    {
+      "id": "agt-pv-intake|supports|proc-adverse-event-intake",
+      "type": "supports",
+      "from": "agt-pv-intake",
+      "to": "proc-adverse-event-intake",
+      "props": {
+        "cycleBeforeMinutes": 240,
+        "cycleAfterMinutes": 25,
+        "cycleUnit": "per case"
+      }
+    },
+    {
+      "id": "agt-pv-intake|supports|proc-case-processing-assessment",
+      "type": "supports",
+      "from": "agt-pv-intake",
+      "to": "proc-case-processing-assessment",
+      "props": {
+        "cycleBeforeMinutes": 195,
+        "cycleAfterMinutes": 47,
+        "cycleUnit": "per case"
+      }
+    },
+    {
+      "id": "agt-reg-assembly|depends_on|app-edms-docuvault",
+      "type": "depends_on",
+      "from": "agt-reg-assembly",
+      "to": "app-edms-docuvault",
+      "props": {}
+    },
+    {
+      "id": "agt-reg-assembly|depends_on|app-regdossier",
+      "type": "depends_on",
+      "from": "agt-reg-assembly",
+      "to": "app-regdossier",
+      "props": {}
+    },
+    {
+      "id": "agt-reg-assembly|runs_on|rt-agentos-azure",
+      "type": "runs_on",
+      "from": "agt-reg-assembly",
+      "to": "rt-agentos-azure",
+      "props": {}
+    },
+    {
+      "id": "agt-reg-assembly|supports|proc-dossier-assembly",
+      "type": "supports",
+      "from": "agt-reg-assembly",
+      "to": "proc-dossier-assembly",
+      "props": {
+        "cycleBeforeMinutes": 2400,
+        "cycleAfterMinutes": 180,
+        "cycleUnit": "per submission"
+      }
+    },
+    {
+      "id": "agt-reg-assembly|supports|proc-submission-tracking",
+      "type": "supports",
+      "from": "agt-reg-assembly",
+      "to": "proc-submission-tracking",
+      "props": {
+        "cycleBeforeMinutes": 480,
+        "cycleAfterMinutes": 90,
+        "cycleUnit": "per submission"
+      }
+    },
+    {
+      "id": "agt-supplier-triage|depends_on|app-auriga-erp",
+      "type": "depends_on",
+      "from": "agt-supplier-triage",
+      "to": "app-auriga-erp",
+      "props": {}
+    },
+    {
+      "id": "agt-supplier-triage|depends_on|app-qualisphere-qms",
+      "type": "depends_on",
+      "from": "agt-supplier-triage",
+      "to": "app-qualisphere-qms",
+      "props": {}
+    },
+    {
+      "id": "agt-supplier-triage|depends_on|app-supplierhub",
+      "type": "depends_on",
+      "from": "agt-supplier-triage",
+      "to": "app-supplierhub",
+      "props": {}
+    },
+    {
+      "id": "agt-supplier-triage|runs_on|rt-dify-onprem",
+      "type": "runs_on",
+      "from": "agt-supplier-triage",
+      "to": "rt-dify-onprem",
+      "props": {}
+    },
+    {
+      "id": "agt-supplier-triage|supports|proc-supplier-performance-review",
+      "type": "supports",
+      "from": "agt-supplier-triage",
+      "to": "proc-supplier-performance-review",
+      "props": {
+        "cycleBeforeMinutes": 300,
+        "cycleAfterMinutes": 75,
+        "cycleUnit": "per review"
+      }
+    },
+    {
+      "id": "agt-supplier-triage|supports|proc-supplier-qualification",
+      "type": "supports",
+      "from": "agt-supplier-triage",
+      "to": "proc-supplier-qualification",
+      "props": {
+        "cycleBeforeMinutes": 420,
+        "cycleAfterMinutes": 95,
+        "cycleUnit": "per supplier"
+      }
+    },
     {
       "id": "app-archimap|contains|ds-archimap-db",
       "type": "contains",
@@ -21856,6 +23319,146 @@ export const EDGES_DOCUMENT = {
       "type": "contains",
       "from": "cap-warehousing-distribution",
       "to": "proc-order-picking-packing",
+      "props": {}
+    },
+    {
+      "id": "cp-atlas|depends_on|plat-apigw",
+      "type": "depends_on",
+      "from": "cp-atlas",
+      "to": "plat-apigw",
+      "props": {}
+    },
+    {
+      "id": "cp-atlas|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "cp-atlas",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "cp-atlas|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "cp-atlas",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "cp-eval|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "cp-eval",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "cp-eval|depends_on|plat-scheduler",
+      "type": "depends_on",
+      "from": "cp-eval",
+      "to": "plat-scheduler",
+      "props": {}
+    },
+    {
+      "id": "cp-eval|integrates_with|cp-warehouse",
+      "type": "integrates_with",
+      "from": "cp-eval",
+      "to": "cp-warehouse",
+      "props": {}
+    },
+    {
+      "id": "cp-eval|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "cp-eval",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "cp-otel|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "cp-otel",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "cp-otel|depends_on|plat-observability",
+      "type": "depends_on",
+      "from": "cp-otel",
+      "to": "plat-observability",
+      "props": {}
+    },
+    {
+      "id": "cp-otel|integrates_with|cp-warehouse",
+      "type": "integrates_with",
+      "from": "cp-otel",
+      "to": "cp-warehouse",
+      "props": {}
+    },
+    {
+      "id": "cp-otel|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "cp-otel",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "cp-policy|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "cp-policy",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "cp-policy|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "cp-policy",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "cp-registry|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "cp-registry",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "cp-registry|integrates_with|cp-policy",
+      "type": "integrates_with",
+      "from": "cp-registry",
+      "to": "cp-policy",
+      "props": {}
+    },
+    {
+      "id": "cp-registry|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "cp-registry",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "cp-warehouse|depends_on|plat-lakehouse",
+      "type": "depends_on",
+      "from": "cp-warehouse",
+      "to": "plat-lakehouse",
+      "props": {}
+    },
+    {
+      "id": "cp-warehouse|depends_on|plat-objectstore",
+      "type": "depends_on",
+      "from": "cp-warehouse",
+      "to": "plat-objectstore",
+      "props": {}
+    },
+    {
+      "id": "cp-warehouse|integrates_with|cp-atlas",
+      "type": "integrates_with",
+      "from": "cp-warehouse",
+      "to": "cp-atlas",
+      "props": {}
+    },
+    {
+      "id": "cp-warehouse|runs_on|host-object-store-east",
+      "type": "runs_on",
+      "from": "cp-warehouse",
+      "to": "host-object-store-east",
       "props": {}
     },
     {
@@ -28145,6 +29748,118 @@ export const EDGES_DOCUMENT = {
       "type": "contains",
       "from": "proc-payment-processing",
       "to": "act-payment-exception-handling",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|depends_on|plat-apigw",
+      "type": "depends_on",
+      "from": "rt-agentos-azure",
+      "to": "plat-apigw",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "rt-agentos-azure",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|depends_on|plat-idp",
+      "type": "depends_on",
+      "from": "rt-agentos-azure",
+      "to": "plat-idp",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|hosted_in|site-cloud-east",
+      "type": "hosted_in",
+      "from": "rt-agentos-azure",
+      "to": "site-cloud-east",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|integrates_with|cp-otel",
+      "type": "integrates_with",
+      "from": "rt-agentos-azure",
+      "to": "cp-otel",
+      "props": {}
+    },
+    {
+      "id": "rt-agentos-azure|runs_on|host-k8s-prod-a",
+      "type": "runs_on",
+      "from": "rt-agentos-azure",
+      "to": "host-k8s-prod-a",
+      "props": {}
+    },
+    {
+      "id": "rt-copilot-studio|depends_on|plat-idp",
+      "type": "depends_on",
+      "from": "rt-copilot-studio",
+      "to": "plat-idp",
+      "props": {}
+    },
+    {
+      "id": "rt-copilot-studio|depends_on|plat-vendor-cloud",
+      "type": "depends_on",
+      "from": "rt-copilot-studio",
+      "to": "plat-vendor-cloud",
+      "props": {}
+    },
+    {
+      "id": "rt-copilot-studio|hosted_in|site-vendor-cloud",
+      "type": "hosted_in",
+      "from": "rt-copilot-studio",
+      "to": "site-vendor-cloud",
+      "props": {}
+    },
+    {
+      "id": "rt-copilot-studio|integrates_with|cp-otel",
+      "type": "integrates_with",
+      "from": "rt-copilot-studio",
+      "to": "cp-otel",
+      "props": {}
+    },
+    {
+      "id": "rt-copilot-studio|runs_on|host-vendor-managed",
+      "type": "runs_on",
+      "from": "rt-copilot-studio",
+      "to": "host-vendor-managed",
+      "props": {}
+    },
+    {
+      "id": "rt-dify-onprem|depends_on|plat-container",
+      "type": "depends_on",
+      "from": "rt-dify-onprem",
+      "to": "plat-container",
+      "props": {}
+    },
+    {
+      "id": "rt-dify-onprem|depends_on|plat-idp",
+      "type": "depends_on",
+      "from": "rt-dify-onprem",
+      "to": "plat-idp",
+      "props": {}
+    },
+    {
+      "id": "rt-dify-onprem|hosted_in|site-hq-dc",
+      "type": "hosted_in",
+      "from": "rt-dify-onprem",
+      "to": "site-hq-dc",
+      "props": {}
+    },
+    {
+      "id": "rt-dify-onprem|integrates_with|cp-otel",
+      "type": "integrates_with",
+      "from": "rt-dify-onprem",
+      "to": "cp-otel",
+      "props": {}
+    },
+    {
+      "id": "rt-dify-onprem|runs_on|host-vm-cluster-hq",
+      "type": "runs_on",
+      "from": "rt-dify-onprem",
+      "to": "host-vm-cluster-hq",
       "props": {}
     },
     {

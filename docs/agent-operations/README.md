@@ -144,15 +144,31 @@ It carries the things nobody can currently answer in one place:
 - GxP scope, validation status, model risk tier, controls in force
 - run cost and attributed benefit, each with its own confidence marker
 
-### The Agent Atlas
+### The agent estate view
 
-The webapp in [`webapp/`](../../webapp/). One document read at four depths —
-portfolio, business domain, process, infrastructure — compiled from the manifests
-and the model, with every panel drilling into the next. Executive at the top, GxP
-control statements and network egress rules at the bottom, same document.
+Agents are not given their own application. They are projected into the
+[Enterprise Map](../../app/README.md) as nodes in the same graph as everything
+else — an `Agent` sits at T1 beside the applications it works alongside, and an
+`AgentRuntime` at T4 beside the platforms it runs on. That placement is the whole
+trick: the lens pivot, the technology chain, impact analysis and search all work
+on an agent with no special cases, and the agent estate view at `#/agents` is a
+rollup of the same graph rather than a second opinion about it.
 
-It is deliberately a *reader* of the registry, not a second source of truth. If a
-number is wrong, the fix is a pull request against `model/`.
+What that buys, concretely:
+
+- **"Which business processes stop if the agent OS landing zone fails?"** is the
+  ordinary impact-analysis question, answered against the ordinary graph: two
+  business domains, three capabilities, six processes.
+- **"What does a machine now do in pharmacovigilance?"** is the ordinary lens
+  pivot from a capability into its IT scope.
+- **ADR-001's claim that the centre is not in the request path** stops being an
+  assertion and becomes a checkable property: telemetry reaches the control plane
+  by `integrates_with`, which the graph does not treat as a dependency, so impact
+  analysis from the conformed pipeline reaches zero business processes.
+  `app/tools/verify.mjs` asserts exactly that.
+
+The view is deliberately a *reader* of the registry, not a second source of truth.
+If a number is wrong, the fix is a pull request against `model/agents/`.
 
 ### The tie to the enterprise deployment platform
 
@@ -160,8 +176,9 @@ Since approved projects can already provision their own apps, API connections an
 cloud resources, **make the manifest the intake artefact**:
 
 1. A team proposes an agent by opening a pull request with its manifest.
-2. CI validates it — schema, referential integrity, required controls for its
-   declared GxP scope and risk tier.
+2. CI validates it — referential integrity against the real enterprise model, and
+   that the committed graph still matches the manifests
+   (`.github/workflows/model.yml`).
 3. On merge, the deployment platform provisions from the manifest: the workload
    identity, the API connections listed under `interfaces.systems`, the secret
    scope, and the collector endpoint the runtime exports to.
@@ -193,4 +210,4 @@ still in draft.
 - Pin which `gen_ai.*` convention version the central pipeline accepts, and who owns the mapping layer when it revs.
 - Agree a Copilot Credit → token conversion factor, or accept that cost is not comparable across frameworks and say so on the dashboard.
 - Decide whether `agt-reg-assembly` continues in production while its validation is in draft. That is a risk acceptance with a named signatory, or it stops.
-- Decide the Documentum position. Legacy OCR failures cap batch-record automation, and no amount of agent work routes around it.
+- Decide the DocuVault OCR position. Scanned attachments that fail OCR are silently skipped, which caps batch-record automation on older batches — and no amount of agent work routes around it.

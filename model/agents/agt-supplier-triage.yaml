@@ -31,13 +31,21 @@ replaces:
   fteEquivalent: 2.5
   displacementType: task-absorption
   retainedByHumans:
-    - "Supplier requalification decision (proc-ncr-qualify)"
+    - "Supplier requalification decision"
     - "Any nonconformance touching a released lot"
 
 business:
-  domain: dom-supply
-  capabilities: [cap-supplier-quality]
-  processes: [proc-ncr-intake, proc-ncr-impact, proc-ncr-supplier]
+  domain: bd-manage-supply-chain-logistics
+  capabilities: [cap-procurement-supplier-management]
+  processes:
+    - id: proc-supplier-qualification
+      cycleBeforeMinutes: 420
+      cycleAfterMinutes: 95
+      cycleUnit: "per supplier"
+    - id: proc-supplier-performance-review
+      cycleBeforeMinutes: 300
+      cycleAfterMinutes: 75
+      cycleUnit: "per review"
 
 model:
   primary: "Internally hosted open-weight model via vLLM gateway"
@@ -46,11 +54,11 @@ model:
   promptVersioning: "Git — prompts are files in the repository"
 
 interfaces:
-  systems: [sys-sap, sys-trackwise, sys-mes, sys-labware, sys-m365]
+  systems: [app-supplierhub, app-qualisphere-qms, app-auriga-erp]
   tools:
-    - { name: "sap-material-trace", type: http, access: read, scope: "Batch genealogy" }
-    - { name: "trackwise-ncr", type: http, access: read-write, scope: "Create draft NCR and supplier CAPA records" }
-    - { name: "smtp-supplier-notify", type: http, access: write, scope: "Draft only — never sends without approval" }
+    - { name: "auriga-material-trace", type: http, access: read, scope: "Batch genealogy" }
+    - { name: "qualisphere-ncr", type: http, access: read-write, scope: "Create draft NCR and supplier CAPA records" }
+    - { name: "supplierhub-notify", type: http, access: write, scope: "Draft only — never sends without approval" }
   humanInLoop:
     mode: approve-before-commit
     gate: "Supplier quality analyst approves impact assessment and any outbound supplier communication"

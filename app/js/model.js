@@ -28,6 +28,13 @@ export const LEVEL_LABELS = {
 const DEP_OUT = new Set(["contains", "runs_on", "hosted_in", "reads", "stores", "depends_on"]);
 const DEP_IN = new Set(["realizes", "connects_to", "supports"]);
 
+/** Types that can `supports` a business node - the supporting services. An
+ *  agent is one of them, but it is not an application: redundancy, coverage
+ *  gaps and the capability matrix all mean "application" specifically, so the
+ *  two are kept apart rather than conflated. */
+export const SERVICE_TYPES = new Set(["Application", "Agent"]);
+export const AGENT_TYPES = new Set(["Agent"]);
+
 const EMPTY = Object.freeze([]);
 
 export function buildModel(nodesDoc, edgesDoc) {
@@ -146,11 +153,11 @@ export function buildModel(nodesDoc, edgesDoc) {
   };
 
   /**
-   * Applications supporting a business node. `direct` are attached to the node
-   * or anything beneath it; `inherited` are attached to an ancestor and so
-   * cover this node too.
+   * Services supporting a business node. `direct` are attached to the node or
+   * anything beneath it; `inherited` are attached to an ancestor and so cover
+   * this node too. `types` narrows to applications or agents.
    */
-  model.applicationsFor = (businessId) => {
+  model.servicesFor = (businessId, types = SERVICE_TYPES) => {
     const scope = new Set(model.subtree(businessId).map((n) => n.id));
     const direct = new Map();
     const inherited = new Map();
@@ -158,14 +165,14 @@ export function buildModel(nodesDoc, edgesDoc) {
       for (const e of inEdges.get(id) || EMPTY) {
         if (e.type !== "supports") continue;
         const app = nodes.get(e.from);
-        if (app && !direct.has(app.id)) direct.set(app.id, { app, target: nodes.get(id) });
+        if (app && types.has(app.type) && !direct.has(app.id)) direct.set(app.id, { app, target: nodes.get(id) });
       }
     }
     for (const anc of model.ancestors(businessId)) {
       for (const e of inEdges.get(anc.id) || EMPTY) {
         if (e.type !== "supports") continue;
         const app = nodes.get(e.from);
-        if (app && !direct.has(app.id) && !inherited.has(app.id)) {
+        if (app && types.has(app.type) && !direct.has(app.id) && !inherited.has(app.id)) {
           inherited.set(app.id, { app, target: anc });
         }
       }
@@ -173,10 +180,16 @@ export function buildModel(nodesDoc, edgesDoc) {
     return { direct: [...direct.values()], inherited: [...inherited.values()] };
   };
 
-  /** Business nodes an IT node ultimately serves, with the applications between. */
+  /** Applications only - what the matrix, redundancy and coverage gaps mean. */
+  model.applicationsFor = (businessId) => model.servicesFor(businessId, new Set(["Application"]));
+
+  /** Agents only - which parts of this business area a machine now performs. */
+  model.agentsFor = (businessId) => model.servicesFor(businessId, AGENT_TYPES);
+
+  /** Business nodes an IT node ultimately serves, with the services between. */
   model.businessFor = (itId) => {
     const reached = model.closure([itId], "up", { includeStart: true });
-    const apps = reached.filter((r) => r.node.type === "Application").map((r) => r.node);
+    const apps = reached.filter((r) => SERVICE_TYPES.has(r.node.type)).map((r) => r.node);
     const targets = new Map();
     for (const app of apps) {
       for (const e of outEdges.get(app.id) || EMPTY) {
@@ -227,6 +240,7 @@ export function buildModel(nodesDoc, edgesDoc) {
     return {
       business: grouped,
       applications: it.filter((r) => r.node.type === "Application").map((r) => r.node).sort(byName),
+      agents: it.filter((r) => r.node.type === "Agent").map((r) => r.node).sort(byName),
       it: it.map((r) => r.node),
       counts: {
         domains: grouped.B1.length, capabilities: grouped.B2.length,
@@ -296,6 +310,81 @@ export function buildModel(nodesDoc, edgesDoc) {
     }
     results.sort((a, b) => b.score - a.score || byName(a.node, b.node));
     return results;
+  };
+
+  /**
+   * The agent estate, rolled up. Findings live on each agent node (derived by
+   * rule in the generator, not authored), so this is a summation rather than a
+   * second opinion - the portfolio view and the agent page cannot disagree.
+   */
+  model.agentEstate = () => {
+    const agents = model.ofType("Agent").sort(byName);
+    const runtimes = model.ofType("AgentRuntime").sort(byName);
+    const controlPlane = model.ofType("PlatformService")
+      .filter((n) => (n.tags || []).includes("agent-control-plane")).sort(byName);
+    const num = (a, key) => Number(a.props?.[key]) || 0;
+    const findings = agents.flatMap((a) => (a.props?.findings || []).map((f) => ({ ...f, agent: a })));
+    const reporting = agents.filter((a) => a.props?.telemetryExportsTo
+      && a.props.telemetryExportsTo !== "none");
+    const frameworks = new Map();
+    for (const a of agents) {
+      const fw = a.props?.framework || "unknown";
+      if (!frameworks.has(fw)) frameworks.set(fw, []);
+      frameworks.get(fw).push(a);
+    }
+    const benefit = agents.reduce((t, a) => t + num(a, "annualBenefitUsd"), 0);
+    const runCost = agents.reduce((t, a) => t + num(a, "annualRunCostUsd"), 0);
+    return {
+      agents, runtimes, controlPlane, findings, frameworks,
+      criticalFindings: findings.filter((f) => f.severity === "critical"),
+      seriousFindings: findings.filter((f) => f.severity === "serious"),
+      fteAbsorbed: Math.round(agents.reduce((t, a) => t + num(a, "fteEquivalent"), 0) * 10) / 10,
+      benefit, runCost, netBenefit: benefit - runCost,
+      reportingCount: reporting.length,
+      conformancePct: agents.length ? Math.round((reporting.length / agents.length) * 100) : 0,
+      gxpCount: agents.filter((a) => a.props?.gxpRelevant).length,
+      validatedCount: agents.filter((a) => a.props?.validationStatus === "validated").length,
+      processesRun: new Set(agents.flatMap((a) => model.out(a.id)
+        .filter((e) => e.type === "supports").map((e) => e.to))).size,
+    };
+  };
+
+  /**
+   * What agents did to the cycle time of the steps they took over. The claim
+   * lives on the `supports` edge, because that is exactly what it is about:
+   * this agent's effect on this step. Steps with no recorded timing are simply
+   * absent rather than shown as zero.
+   */
+  model.cycleImpact = (agentId = null) => {
+    const out = [];
+    for (const a of model.ofType("Agent")) {
+      if (agentId && a.id !== agentId) continue;
+      for (const e of model.out(a.id)) {
+        if (e.type !== "supports") continue;
+        const before = Number(e.props?.cycleBeforeMinutes);
+        const after = Number(e.props?.cycleAfterMinutes);
+        if (!Number.isFinite(before) || !Number.isFinite(after) || before <= 0) continue;
+        const step = nodes.get(e.to);
+        if (!step) continue;
+        out.push({
+          agent: a, step, before, after,
+          unit: e.props.cycleUnit || "",
+          reductionPct: Math.round((1 - after / before) * 100),
+        });
+      }
+    }
+    return out.sort((x, y) => y.reductionPct - x.reductionPct || y.before - x.before);
+  };
+
+  /** Agents whose blast radius includes this business node, with their steps. */
+  model.agentCoverage = (businessId) => {
+    const { direct, inherited } = model.agentsFor(businessId);
+    return [...direct, ...inherited].map((entry) => ({
+      agent: entry.app,
+      target: entry.target,
+      processes: model.out(entry.app.id).filter((e) => e.type === "supports")
+        .map((e) => nodes.get(e.to)).filter(Boolean),
+    }));
   };
 
   model.stats = () => ({

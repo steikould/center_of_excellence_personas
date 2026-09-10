@@ -28,16 +28,20 @@ the enterprise deployment platform.**
 - Schema: `knowledge-base/_schema/agent-manifest.schema.md`. Framework-neutral: agent
   OS, Copilot Studio, Dify and anything future describe themselves identically.
 - Storage: `model/agents/{id}.yaml`, reviewed as code.
-- Validation: `webapp/scripts/build-model.mjs` runs in CI and fails on any broken
-  reference or missing required control for the declared GxP scope and risk tier. It
-  also derives risk findings by rule, so the gap list cannot go stale by hand.
+- Validation: `app/tools/generate_seed.py` projects the registry into the enterprise
+  graph and fails on any broken reference — an unknown process, application, runtime
+  or control. It derives risk findings by rule, so the gap list cannot go stale by
+  hand, and `app/tools/verify.mjs` asserts the acceptance criteria. Both run in CI
+  (`.github/workflows/model.yml`), which also fails the build when the committed
+  graph no longer matches the manifests it was generated from — a registry that
+  disagrees with its own output is worse than no registry.
 - Provisioning: on merge, the deployment platform provisions from the manifest — the
   workload identity, the API connections named in `interfaces.systems`, the secret
   scope, and the collector endpoint named in `telemetry.collector`.
 - Promotion: blocked until the central evaluation score clears the agent's registered
   threshold (`ctl-eval-gate`).
 - Every record carries a `confidence` marker (`seed` / `declared` / `evidenced`), and
-  the Agent Atlas renders it, so unverified numbers cannot silently become fact.
+  the Enterprise Map renders it, so unverified numbers cannot silently become fact.
 
 ## Consequences
 
@@ -45,7 +49,7 @@ the enterprise deployment platform.**
 - Registration is the path of least resistance rather than a tax: you register because that is how you get your API connections.
 - Access is declared, reviewable and diffable. `read-write` on a QMS shows up in a pull request instead of a console.
 - Governance gaps become build failures and derived findings rather than a spreadsheet somebody maintains.
-- The Agent Atlas, the evaluation harness and the deployment platform all read one artefact, so they cannot disagree.
+- The Enterprise Map, the evaluation harness and the deployment platform all read one artefact, so they cannot disagree.
 - The estate survives the consultant leaving: the manifest is ours whatever happens to the workspace it describes.
 
 ### Negative
@@ -68,7 +72,7 @@ the enterprise deployment platform.**
 |---|---|---|---|
 | Register agents in the existing CMDB / ServiceNow | Reuses an owned system; already in ITSM workflows | No good shape for prompts, tools, evaluation thresholds or telemetry coverage; not diffable; not close to where agents are built | Would become a stale copy within a quarter |
 | Use each framework's own registry (agent OS workspace, Power Platform solutions, Dify apps) | Zero build; always current | Three registries, three schemas, no portfolio view, and nothing survives losing access to a vendor workspace | Fails the question this ADR exists to answer |
-| A registry database with a UI, rather than files in git | Nicer authoring for non-engineers | Loses code review, diffs, CI validation and the ability to provision from the same artefact | Files first; a UI over the same schema can come later if authoring proves to be the bottleneck |
+| A registry database with a UI, rather than files in git | Nicer authoring for non-engineers | Loses code review, diffs, CI validation and the ability to provision from the same artefact | Files first; the Enterprise Map already reads the same schema, and richer authoring can come later if it proves to be the bottleneck |
 
 ## Metadata
 - **Decision Maker(s)**: AI CoE Senior Director; Enterprise Architect; Platform Engineering

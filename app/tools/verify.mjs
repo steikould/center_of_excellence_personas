@@ -178,5 +178,83 @@ console.log(`${model.nodes.size} nodes, ${model.edges.size} relationships\n`);
     `${(performance.now() - t1).toFixed(0)} ms for 130 rows x 67 columns`);
 }
 
+/* --- 9. The agent layer --------------------------------------------------- */
+{
+  const estate = model.agentEstate();
+  check("9. Every agent is bound into the graph, not parked beside it",
+    estate.agents.length > 0 && estate.agents.every((a) =>
+      model.out(a.id).some((e) => e.type === "supports")
+      && model.out(a.id).some((e) => e.type === "runs_on")),
+    `${estate.agents.length} agents across ${estate.frameworks.size} frameworks`);
+
+  // The pivot has to work in both directions or the agent is not really in the
+  // model: a business process must reach its agent, and the agent must reach
+  // the business.
+  const withAgents = model.ofLevel("B3").filter((p) => model.agentsFor(p.id).direct.length);
+  const pivotBoth = withAgents.every((p) => {
+    const agents = model.agentsFor(p.id).direct.map((d) => d.app.id);
+    return agents.every((aid) => model.itScope(p.id).T1.some((n) => n.id === aid)
+      && model.impactOf(aid).business.B3.some((b) => b.id === p.id));
+  });
+  check("9b. Business steps and their agents pivot in both directions", pivotBoth,
+    `${withAgents.length} process steps are agent-run`);
+
+  // ADR-001's central claim, made checkable: the control plane receives
+  // telemetry by integration, never by dependency, so nothing depends on it.
+  const cpImpact = estate.controlPlane.map((c) => model.impactOf(c.id).counts.processes);
+  check("9c. The central control plane is not in any agent's request path",
+    cpImpact.every((n) => n === 0),
+    `${estate.controlPlane.length} components, ${cpImpact.reduce((a, b) => a + b, 0)} business processes affected`);
+
+  // A runtime, by contrast, is a genuine dependency and must show a blast radius.
+  const rt = estate.runtimes.find((r) => r.id === "rt-agentos-azure");
+  const rtImpact = rt ? model.impactOf(rt.id) : { counts: { processes: 0 } };
+  check("9d. Losing a runtime shows a real business blast radius",
+    rtImpact.counts.processes > 0,
+    rt ? `${rt.name}: ${rtImpact.counts.domains} domains, ${rtImpact.counts.processes} processes` : "no runtime");
+
+  // Findings are derived from the manifest, so an unowned, unvalidated agent
+  // cannot present as healthy.
+  const unhealthy = estate.agents.filter((a) =>
+    (a.props.findings || []).some((f) => f.severity === "critical"));
+  check("9e. An agent with a critical finding cannot show as healthy",
+    unhealthy.every((a) => a.health === "at-risk"),
+    `${unhealthy.length} agent(s) carry a critical finding`);
+
+  check("9f. Telemetry conformance is measurable across frameworks",
+    estate.conformancePct >= 0 && estate.conformancePct <= 100
+      && estate.agents.every((a) => a.props.coverage && Object.keys(a.props.coverage).length),
+    `${estate.conformancePct}% of agents export to the central pipeline`);
+
+  // Agents support business work, but they are not applications: conflating the
+  // two would silently distort redundancy and coverage-gap analysis.
+  const matrix = model.matrix("B3");
+  check("9g. Agents never masquerade as applications in the matrix",
+    matrix.applications.every((a) => a.type !== "Agent")
+      && model.ofType("Agent").every((a) => model.applicationsFor(
+        model.out(a.id).find((e) => e.type === "supports").to).direct.every((d) => d.app.type !== "Agent")),
+    `${matrix.applications.length} application columns, 0 agents`);
+
+  const cycle = model.cycleImpact();
+  check("9h. Cycle-time claims live on the supports edge and every one improves",
+    cycle.length > 0 && cycle.every((d) => d.after < d.before && d.reductionPct > 0),
+    `${cycle.length} timed steps, ${cycle[cycle.length - 1].reductionPct}%-${cycle[0].reductionPct}% reduction`);
+
+  check("9i. A cycle-time claim only ever attaches to a step its agent performs",
+    cycle.every((d) => model.out(d.agent.id)
+      .some((e) => e.type === "supports" && e.to === d.step.id)));
+
+  check("9j. Scoping the chart to one agent is a subset of the estate chart",
+    model.ofType("Agent").every((a) => {
+      const own = model.cycleImpact(a.id);
+      return own.every((d) => d.agent.id === a.id)
+        && own.length === cycle.filter((d) => d.agent.id === a.id).length;
+    }));
+
+  check("9k. Every agent node points back at the manifest it came from",
+    estate.agents.every((a) => (a.externalRefs.manifest || "").startsWith("model/agents/")));
+}
+
+
 console.log(`\n${failures === 0 ? "All checks passed." : `${failures} check(s) failed.`}\n`);
 process.exit(failures === 0 ? 0 : 1);

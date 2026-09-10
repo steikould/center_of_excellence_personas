@@ -3,7 +3,7 @@
 #                  Each stays in its own cloud, with its own native LLMOps.
 #   controlPlane — the thin centralised layer the CoE owns. It holds the
 #                  registry, the conformed telemetry, the evaluation harness
-#                  and this atlas. It does NOT sit in any agent's request path.
+#                  and the map. It does NOT sit in any agent's request path.
 runtimes:
   - id: rt-agentos-azure
     name: PwC agent OS — Azure landing zone
@@ -34,6 +34,10 @@ runtimes:
       exportsTo: cp-otel
     gxpBoundary: true
     hosts: [agt-pv-intake, agt-batch-review, agt-reg-assembly]
+    binding:
+      runsOn: host-k8s-prod-a
+      hostedIn: site-cloud-east
+      dependsOn: [plat-container, plat-idp, plat-apigw]
 
   - id: rt-copilot-studio
     name: Microsoft Copilot Studio — Power Platform managed environment
@@ -60,6 +64,10 @@ runtimes:
       exportsTo: cp-otel
     gxpBoundary: false
     hosts: [agt-medinfo]
+    binding:
+      runsOn: host-vendor-managed
+      hostedIn: site-vendor-cloud
+      dependsOn: [plat-vendor-cloud, plat-idp]
 
   - id: rt-dify-onprem
     name: Dify — on-premises Kubernetes
@@ -86,6 +94,10 @@ runtimes:
       exportsTo: cp-otel
     gxpBoundary: true
     hosts: [agt-supplier-triage]
+    binding:
+      runsOn: host-vm-cluster-hq
+      hostedIn: site-hq-dc
+      dependsOn: [plat-container, plat-idp]
 
 controlPlane:
   - id: cp-registry
@@ -95,6 +107,9 @@ controlPlane:
     implementation: "model/agents/*.yaml in git → validated by CI → published to the enterprise deployment platform as the intake artifact"
     ownedBy: "AI Center of Excellence"
     inRequestPath: false
+    binding:
+      runsOn: host-k8s-prod-a
+      dependsOn: [plat-container]
 
   - id: cp-otel
     name: Conformed Telemetry Pipeline
@@ -104,14 +119,20 @@ controlPlane:
     ownedBy: "CoE Platform Engineering"
     inRequestPath: false
     note: "Receives telemetry only. It never proxies an agent call, so it cannot take an agent down."
+    binding:
+      runsOn: host-k8s-prod-a
+      dependsOn: [plat-container, plat-observability]
 
   - id: cp-warehouse
     name: Agent Operations Warehouse
     layer: observability
-    summary: "Query surface over conformed runs: cost, latency, escalation rate, override rate, per-process throughput. The numbers behind this atlas."
+    summary: "Query surface over conformed runs: cost, latency, escalation rate, override rate, per-process throughput. The numbers behind the agent estate view."
     implementation: "Azure Data Explorer; 400-day retention on span skeletons, 30-day on payload references"
     ownedBy: "CoE Platform Engineering"
     inRequestPath: false
+    binding:
+      runsOn: host-object-store-east
+      dependsOn: [plat-lakehouse, plat-objectstore]
 
   - id: cp-eval
     name: Central Evaluation & Scorecard
@@ -121,6 +142,9 @@ controlPlane:
     ownedBy: "AI Center of Excellence + Quality Assurance"
     inRequestPath: false
     note: "This is the one thing deliberately NOT federated. A vendor grading its own homework is not evidence."
+    binding:
+      runsOn: host-k8s-prod-a
+      dependsOn: [plat-container, plat-scheduler]
 
   - id: cp-policy
     name: Policy & Guardrail Baseline
@@ -129,11 +153,17 @@ controlPlane:
     implementation: "Policy set in the deployment platform; per-runtime attestation; CI check against the manifest"
     ownedBy: "AI Governance Board"
     inRequestPath: false
+    binding:
+      runsOn: host-k8s-prod-a
+      dependsOn: [plat-container]
 
   - id: cp-atlas
-    name: Agent Atlas (this application)
+    name: Enterprise Map — agent estate view
     layer: experience
     summary: "The executive-to-infrastructure view. Reads the registry and the warehouse; writes nothing."
-    implementation: "Static React application; model compiled from model/*.yaml, live metrics fetched from cp-warehouse"
+    implementation: "The Enterprise Map application in app/. Agent nodes are compiled from model/agents/*.yaml; live metrics come from cp-warehouse"
     ownedBy: "AI Center of Excellence"
     inRequestPath: false
+    binding:
+      runsOn: host-k8s-prod-a
+      dependsOn: [plat-container, plat-apigw]

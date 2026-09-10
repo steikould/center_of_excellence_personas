@@ -46,6 +46,11 @@ function renderUpstream(model, node) {
         : raw("")))}
     </div>
 
+    ${impact.agents.length ? section("Agents in the failure path", impact.agents.length, tpl`
+      <p class="lede">Work a machine now performs that stops with this element. Each agent takes its
+      business steps down with it.</p>
+      ${rows(model, impact.agents)}`) : ""}
+
     ${section("Applications in the failure path", impact.applications.length,
       impact.applications.length ? rows(model, impact.applications) : emptyState("No application depends on this."))}
   `;

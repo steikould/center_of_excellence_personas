@@ -7,7 +7,7 @@ in `model/agents/{agent-id}.yaml`.
 The manifest is **framework-neutral by design**. A PwC agent OS agent, a Copilot
 Studio agent and a self-hosted Dify workflow all describe themselves with the same
 fields, because everything downstream — the registry, the telemetry contract, the
-evaluation gate, the deployment platform, the Agent Atlas — keys off this shape
+evaluation gate, the deployment platform, the Enterprise Map — keys off this shape
 rather than off any vendor's.
 
 ---
@@ -51,9 +51,14 @@ replaces:
   note: "{What actually happened to the people. Say the true thing.}"
 
 business:
-  domain: dom-{id}
+  domain: bd-{id}                   # ids from the enterprise model in app/data/
   capabilities: [cap-{id}]
-  processes: [proc-{id}]            # every step must name this agent back
+  processes:                        # each id must exist; the generator checks
+    - id: proc-{id}
+      cycleBeforeMinutes: {number}  # optional; the agent's claim about this step
+      cycleAfterMinutes: {number}
+      cycleUnit: "{per case | per batch | per submission | ...}"
+    - proc-{id}                     # a bare id is also accepted, with no claim
 
 model:
   primary: "{Model and how it is reached}"
@@ -147,6 +152,19 @@ and cannot attribute a cent of the model bill to it.
 names how conformance is *proven*. Listing a control you cannot evidence from
 telemetry or CI makes the manifest worse, not better.
 
+**`business.processes[].cycle*`** — The agent's claim about what it did to that
+step's cycle time. It belongs here, on the agent, rather than on the enterprise
+process node: the "before" only means anything relative to an intervention, and
+the 120 steps no agent touches have no before. The generator writes the pair onto
+the `supports` edge — which is exactly what it describes, this agent's effect on
+this step — and refuses a claim where the cycle got *worse*, since that is almost
+always a transposition.
+
+**`cycleUnit` matters more than it looks.** Steps measured per inquiry and per
+submission share no axis, so the estate view charts *proportional* change and
+only ever puts absolute times on a shared axis within a single agent. Name the
+unit or the number cannot be read.
+
 **`openQuestions`** — Keep it populated. An agent with no open questions has either
 been fully handed over or has not been looked at.
 
@@ -154,16 +172,23 @@ been fully handed over or has not been looked at.
 
 ## Validation
 
-`webapp/scripts/build-model.mjs` compiles and validates the whole model. It fails
-the build on any broken reference: an unknown domain, capability, process, system,
-runtime or control; a process claiming an agent that does not claim it back; a
-process whose mode requires an agent but names none.
+`app/tools/seed_agents.py` projects the registry into the enterprise graph, and
+that projection is the validation. Every binding is guarded: a manifest naming a
+business process, application, runtime, host, platform service or control that
+does not exist fails `generate_seed.py` rather than producing a dangling edge.
+Runtime `hosts` lists are cross-checked against what each manifest claims its
+runtime is, so the two cannot drift apart silently.
 
 It also derives the risk findings — no technical owner, GxP production without
 validation, no central telemetry export, no cost attribution, no evaluation, no
 degraded mode, source not held, no periodic review, unreviewed external output.
 Those are rules over the manifests, not a hand-maintained list, so they cannot go
-stale while the estate changes.
+stale while the estate changes. `health` is derived from them too: an agent
+carrying a critical finding cannot render as green.
+
+`node app/tools/verify.mjs` then asserts the acceptance criteria, including that
+every agent is bound into the graph in both directions and that the central
+control plane is in no agent's request path.
 
 ## Where to save
 

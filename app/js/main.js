@@ -19,6 +19,7 @@ import { renderDual } from "./views/dual.js";
 import { renderSearch } from "./views/search.js";
 import { renderQuality } from "./views/quality.js";
 import { renderModelAdmin } from "./views/modeladmin.js";
+import { renderAgentEstate, renderAgent, renderRuntimePanel } from "./views/agents.js";
 import { renderInspector } from "./views/inspector.js";
 
 const view = qs("#view");
@@ -64,10 +65,20 @@ function renderRoute(route) {
       if (!node) { body = notFound(id); break; }
       body = renderBusinessNode(model, node);
       break;
-    case "it":
+    case "it": {
       if (!node) { body = notFound(id); break; }
       lens = "it";
-      body = renderITView(model, node, params);
+      // An agent gets its manifest rather than a technology scope: the useful
+      // question about an agent is what it does and what it can reach, not
+      // which platform tier it sits on.
+      if (node.type === "Agent") { body = renderAgent(model, node); break; }
+      body = node.type === "AgentRuntime"
+        ? tpl`${renderITView(model, node, params)}${renderRuntimePanel(model, node)}`
+        : renderITView(model, node, params);
+      break;
+    }
+    case "agents":
+      body = renderAgentEstate(model);
       break;
     case "impact":
       if (!node) { body = notFound(id); break; }
@@ -136,7 +147,8 @@ function renderBreadcrumb(head, node) {
       seen.add(n.id);
       items.push({ label: n.name, href: hrefFor(n), node: n });
     }
-  } else if (head === "matrix") items.push({ label: "Capability to application matrix" });
+  } else if (head === "agents") items.push({ label: "Agent estate" });
+  else if (head === "matrix") items.push({ label: "Capability to application matrix" });
   else if (head === "quality") items.push({ label: "Data quality" });
   else if (head === "model") items.push({ label: "Model" });
   else if (head === "search") items.push({ label: "Search" });
@@ -160,7 +172,7 @@ function hrefFor(node) {
 /* ------------------------------------------------------------------- chrome */
 function updateChrome(head, node, lens) {
   qsa("[data-nav]").forEach((a) => {
-    const match = (a.dataset.nav === "map" && !["matrix", "quality", "model"].includes(head))
+    const match = (a.dataset.nav === "map" && !["agents", "matrix", "quality", "model"].includes(head))
       || a.dataset.nav === head;
     if (match) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
