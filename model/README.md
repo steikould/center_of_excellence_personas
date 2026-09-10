@@ -22,6 +22,11 @@ python3 app/tools/generate_seed.py   # projects the registry into app/data/
 node app/tools/verify.mjs            # acceptance checks, agent layer included
 ```
 
+**Commit `app/data/` alongside your manifest change.** CI regenerates and fails if
+the committed graph no longer matches the registry it came from — editing a
+manifest without regenerating is the easy mistake, and a registry that disagrees
+with its own output is worse than no registry.
+
 `app/tools/seed_agents.py` does the projection. Every binding into the enterprise
 model is guarded: a manifest naming a process, application, host or platform
 service that does not exist fails the generator rather than producing a dangling

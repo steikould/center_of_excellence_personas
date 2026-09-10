@@ -1,0 +1,65 @@
+# Validates the enterprise model and the agent registry on every change.
+#
+# ADR-002 makes the Agent Operating Manifest the registration contract and says
+# a broken reference fails the build. This is what makes that true. The drift
+# check is the important half: it is easy to edit a manifest and forget to
+# regenerate, and a registry that disagrees with the graph it produced is worse
+# than no registry.
+name: model
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "app/**"
+      - "model/**"
+      - ".github/workflows/model.yml"
+  pull_request:
+    paths:
+      - "app/**"
+      - "model/**"
+      - ".github/workflows/model.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install PyYAML
+        run: pip install --quiet "PyYAML>=6,<7"
+
+      - name: Regenerate the model from source
+        # Fails on any broken binding: a manifest naming a business process,
+        # application, runtime, host, platform service or control that does not
+        # exist, a runtime hosting an agent that claims a different runtime, or
+        # a cycle-time claim that got worse.
+        run: python3 app/tools/generate_seed.py
+
+      - name: Check the committed model matches its source
+        # Scoped to the generated artefacts only. app/data/README.md is
+        # hand-written documentation that happens to live in the same directory.
+        run: |
+          generated="app/data/nodes.json app/data/edges.json app/data/seed-data.js"
+          if ! git diff --quiet -- $generated; then
+            echo "::error::The generated model is out of sync with its source."
+            echo "Someone edited model/ or a seed script without regenerating."
+            echo "Run: python3 app/tools/generate_seed.py — then commit app/data."
+            git diff --stat -- $generated
+            exit 1
+          fi
+          echo "Generated model matches model/ and the seed scripts."
+
+      - name: Acceptance checks
+        # Includes the byte-identical export check, so the canonical form stays
+        # the same whether Python or the browser wrote it.
+        run: node app/tools/verify.mjs

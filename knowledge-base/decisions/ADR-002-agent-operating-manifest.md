@@ -31,7 +31,10 @@ the enterprise deployment platform.**
 - Validation: `app/tools/generate_seed.py` projects the registry into the enterprise
   graph and fails on any broken reference — an unknown process, application, runtime
   or control. It derives risk findings by rule, so the gap list cannot go stale by
-  hand, and `app/tools/verify.mjs` asserts the acceptance criteria in CI.
+  hand, and `app/tools/verify.mjs` asserts the acceptance criteria. Both run in CI
+  (`.github/workflows/model.yml`), which also fails the build when the committed
+  graph no longer matches the manifests it was generated from — a registry that
+  disagrees with its own output is worse than no registry.
 - Provisioning: on merge, the deployment platform provisions from the manifest — the
   workload identity, the API connections named in `interfaces.systems`, the secret
   scope, and the collector endpoint named in `telemetry.collector`.

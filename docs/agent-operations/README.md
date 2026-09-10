@@ -176,8 +176,9 @@ Since approved projects can already provision their own apps, API connections an
 cloud resources, **make the manifest the intake artefact**:
 
 1. A team proposes an agent by opening a pull request with its manifest.
-2. CI validates it — schema, referential integrity, required controls for its
-   declared GxP scope and risk tier.
+2. CI validates it — referential integrity against the real enterprise model, and
+   that the committed graph still matches the manifests
+   (`.github/workflows/model.yml`).
 3. On merge, the deployment platform provisions from the manifest: the workload
    identity, the API connections listed under `interfaces.systems`, the secret
    scope, and the collector endpoint the runtime exports to.
