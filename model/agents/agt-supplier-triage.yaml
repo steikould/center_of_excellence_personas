@@ -37,7 +37,15 @@ replaces:
 business:
   domain: bd-manage-supply-chain-logistics
   capabilities: [cap-procurement-supplier-management]
-  processes: [proc-supplier-qualification, proc-supplier-performance-review]
+  processes:
+    - id: proc-supplier-qualification
+      cycleBeforeMinutes: 420
+      cycleAfterMinutes: 95
+      cycleUnit: "per supplier"
+    - id: proc-supplier-performance-review
+      cycleBeforeMinutes: 300
+      cycleAfterMinutes: 75
+      cycleUnit: "per review"
 
 model:
   primary: "Internally hosted open-weight model via vLLM gateway"

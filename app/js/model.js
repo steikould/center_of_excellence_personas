@@ -349,6 +349,33 @@ export function buildModel(nodesDoc, edgesDoc) {
     };
   };
 
+  /**
+   * What agents did to the cycle time of the steps they took over. The claim
+   * lives on the `supports` edge, because that is exactly what it is about:
+   * this agent's effect on this step. Steps with no recorded timing are simply
+   * absent rather than shown as zero.
+   */
+  model.cycleImpact = (agentId = null) => {
+    const out = [];
+    for (const a of model.ofType("Agent")) {
+      if (agentId && a.id !== agentId) continue;
+      for (const e of model.out(a.id)) {
+        if (e.type !== "supports") continue;
+        const before = Number(e.props?.cycleBeforeMinutes);
+        const after = Number(e.props?.cycleAfterMinutes);
+        if (!Number.isFinite(before) || !Number.isFinite(after) || before <= 0) continue;
+        const step = nodes.get(e.to);
+        if (!step) continue;
+        out.push({
+          agent: a, step, before, after,
+          unit: e.props.cycleUnit || "",
+          reductionPct: Math.round((1 - after / before) * 100),
+        });
+      }
+    }
+    return out.sort((x, y) => y.reductionPct - x.reductionPct || y.before - x.before);
+  };
+
   /** Agents whose blast radius includes this business node, with their steps. */
   model.agentCoverage = (businessId) => {
     const { direct, inherited } = model.agentsFor(businessId);

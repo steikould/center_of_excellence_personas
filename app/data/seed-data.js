@@ -17875,14 +17875,22 @@ export const EDGES_DOCUMENT = {
       "type": "supports",
       "from": "agt-batch-review",
       "to": "proc-batch-release-disposition",
-      "props": {}
+      "props": {
+        "cycleBeforeMinutes": 600,
+        "cycleAfterMinutes": 125,
+        "cycleUnit": "per batch"
+      }
     },
     {
       "id": "agt-batch-review|supports|proc-deviation-management",
       "type": "supports",
       "from": "agt-batch-review",
       "to": "proc-deviation-management",
-      "props": {}
+      "props": {
+        "cycleBeforeMinutes": 330,
+        "cycleAfterMinutes": 95,
+        "cycleUnit": "per deviation"
+      }
     },
     {
       "id": "agt-medinfo|depends_on|app-edms-docuvault",
@@ -17931,14 +17939,22 @@ export const EDGES_DOCUMENT = {
       "type": "supports",
       "from": "agt-medinfo",
       "to": "proc-case-intake-triage",
-      "props": {}
+      "props": {
+        "cycleBeforeMinutes": 15,
+        "cycleAfterMinutes": 2,
+        "cycleUnit": "per inquiry"
+      }
     },
     {
       "id": "agt-medinfo|supports|proc-technical-product-support",
       "type": "supports",
       "from": "agt-medinfo",
       "to": "proc-technical-product-support",
-      "props": {}
+      "props": {
+        "cycleBeforeMinutes": 45,
+        "cycleAfterMinutes": 6,
+        "cycleUnit": "per inquiry"
+      }
     },
     {
       "id": "agt-pv-intake|depends_on|app-edms-docuvault",
@@ -17973,14 +17989,22 @@ export const EDGES_DOCUMENT = {
       "type": "supports",
       "from": "agt-pv-intake",
       "to": "proc-adverse-event-intake",
-      "props": {}
+      "props": {
+        "cycleBeforeMinutes": 240,
+        "cycleAfterMinutes": 25,
+        "cycleUnit": "per case"
+      }
     },
     {
       "id": "agt-pv-intake|supports|proc-case-processing-assessment",
       "type": "supports",
       "from": "agt-pv-intake",
       "to": "proc-case-processing-assessment",
-      "props": {}
+      "props": {
+        "cycleBeforeMinutes": 195,
+        "cycleAfterMinutes": 47,
+        "cycleUnit": "per case"
+      }
     },
     {
       "id": "agt-reg-assembly|depends_on|app-edms-docuvault",
@@ -18008,14 +18032,22 @@ export const EDGES_DOCUMENT = {
       "type": "supports",
       "from": "agt-reg-assembly",
       "to": "proc-dossier-assembly",
-      "props": {}
+      "props": {
+        "cycleBeforeMinutes": 2400,
+        "cycleAfterMinutes": 180,
+        "cycleUnit": "per submission"
+      }
     },
     {
       "id": "agt-reg-assembly|supports|proc-submission-tracking",
       "type": "supports",
       "from": "agt-reg-assembly",
       "to": "proc-submission-tracking",
-      "props": {}
+      "props": {
+        "cycleBeforeMinutes": 480,
+        "cycleAfterMinutes": 90,
+        "cycleUnit": "per submission"
+      }
     },
     {
       "id": "agt-supplier-triage|depends_on|app-auriga-erp",
@@ -18050,14 +18082,22 @@ export const EDGES_DOCUMENT = {
       "type": "supports",
       "from": "agt-supplier-triage",
       "to": "proc-supplier-performance-review",
-      "props": {}
+      "props": {
+        "cycleBeforeMinutes": 300,
+        "cycleAfterMinutes": 75,
+        "cycleUnit": "per review"
+      }
     },
     {
       "id": "agt-supplier-triage|supports|proc-supplier-qualification",
       "type": "supports",
       "from": "agt-supplier-triage",
       "to": "proc-supplier-qualification",
-      "props": {}
+      "props": {
+        "cycleBeforeMinutes": 420,
+        "cycleAfterMinutes": 95,
+        "cycleUnit": "per supplier"
+      }
     },
     {
       "id": "app-archimap|contains|ds-archimap-db",

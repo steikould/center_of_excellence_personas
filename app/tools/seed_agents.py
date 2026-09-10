@@ -299,7 +299,26 @@ def build_agents(add_node, add_edge, node_exists, model_dir=MODEL_DIR):
                 problems.append("%s: unknown control %r" % (a["id"], cid))
 
         for proc in a.get("business", {}).get("processes", []):
-            bind(a["id"], "supports", proc, "supports process")
+            if isinstance(proc, str):
+                bind(a["id"], "supports", proc, "supports process")
+                continue
+            pid = proc.get("id")
+            before = proc.get("cycleBeforeMinutes")
+            after = proc.get("cycleAfterMinutes")
+            if before is not None and after is not None and after > before:
+                problems.append("%s: %s claims a cycle time that got worse (%s -> %s)"
+                                % (a["id"], pid, before, after))
+            if not node_exists(pid):
+                problems.append("%s: supports process -> unknown node %r" % (a["id"], pid))
+                continue
+            edge_props = {}
+            if before is not None:
+                edge_props["cycleBeforeMinutes"] = jsonsafe(before)
+            if after is not None:
+                edge_props["cycleAfterMinutes"] = jsonsafe(after)
+            if proc.get("cycleUnit"):
+                edge_props["cycleUnit"] = proc["cycleUnit"]
+            add_edge(a["id"], "supports", pid, **edge_props)
         for sys_id in a.get("interfaces", {}).get("systems", []):
             bind(a["id"], "depends_on", sys_id, "system access")
 

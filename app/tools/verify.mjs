@@ -235,7 +235,23 @@ console.log(`${model.nodes.size} nodes, ${model.edges.size} relationships\n`);
         model.out(a.id).find((e) => e.type === "supports").to).direct.every((d) => d.app.type !== "Agent")),
     `${matrix.applications.length} application columns, 0 agents`);
 
-  check("9h. Every agent node points back at the manifest it came from",
+  const cycle = model.cycleImpact();
+  check("9h. Cycle-time claims live on the supports edge and every one improves",
+    cycle.length > 0 && cycle.every((d) => d.after < d.before && d.reductionPct > 0),
+    `${cycle.length} timed steps, ${cycle[cycle.length - 1].reductionPct}%-${cycle[0].reductionPct}% reduction`);
+
+  check("9i. A cycle-time claim only ever attaches to a step its agent performs",
+    cycle.every((d) => model.out(d.agent.id)
+      .some((e) => e.type === "supports" && e.to === d.step.id)));
+
+  check("9j. Scoping the chart to one agent is a subset of the estate chart",
+    model.ofType("Agent").every((a) => {
+      const own = model.cycleImpact(a.id);
+      return own.every((d) => d.agent.id === a.id)
+        && own.length === cycle.filter((d) => d.agent.id === a.id).length;
+    }));
+
+  check("9k. Every agent node points back at the manifest it came from",
     estate.agents.every((a) => (a.externalRefs.manifest || "").startsWith("model/agents/")));
 }
 

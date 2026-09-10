@@ -38,7 +38,15 @@ replaces:
 business:
   domain: bd-acquire-serve-customers
   capabilities: [cap-customer-support-veterinary-services]
-  processes: [proc-case-intake-triage, proc-technical-product-support]
+  processes:
+    - id: proc-case-intake-triage
+      cycleBeforeMinutes: 15
+      cycleAfterMinutes: 2
+      cycleUnit: "per inquiry"
+    - id: proc-technical-product-support
+      cycleBeforeMinutes: 45
+      cycleAfterMinutes: 6
+      cycleUnit: "per inquiry"
 
 model:
   primary: "Copilot Studio managed model"

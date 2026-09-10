@@ -40,7 +40,15 @@ replaces:
 business:
   domain: bd-manage-clinical-regulatory-affairs
   capabilities: [cap-pharmacovigilance]
-  processes: [proc-adverse-event-intake, proc-case-processing-assessment]
+  processes:
+    - id: proc-adverse-event-intake
+      cycleBeforeMinutes: 240
+      cycleAfterMinutes: 25
+      cycleUnit: "per case"
+    - id: proc-case-processing-assessment
+      cycleBeforeMinutes: 195
+      cycleAfterMinutes: 47
+      cycleUnit: "per case"
 
 model:
   primary: "GPT-class frontier model via Azure OpenAI, private endpoint"

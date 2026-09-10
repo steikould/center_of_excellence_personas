@@ -53,7 +53,12 @@ replaces:
 business:
   domain: bd-{id}                   # ids from the enterprise model in app/data/
   capabilities: [cap-{id}]
-  processes: [proc-{id}]            # each must exist; the generator checks
+  processes:                        # each id must exist; the generator checks
+    - id: proc-{id}
+      cycleBeforeMinutes: {number}  # optional; the agent's claim about this step
+      cycleAfterMinutes: {number}
+      cycleUnit: "{per case | per batch | per submission | ...}"
+    - proc-{id}                     # a bare id is also accepted, with no claim
 
 model:
   primary: "{Model and how it is reached}"
@@ -146,6 +151,19 @@ and cannot attribute a cent of the model bill to it.
 **`governance.controls`** — Reference `model/controls.yaml`. Every control there
 names how conformance is *proven*. Listing a control you cannot evidence from
 telemetry or CI makes the manifest worse, not better.
+
+**`business.processes[].cycle*`** — The agent's claim about what it did to that
+step's cycle time. It belongs here, on the agent, rather than on the enterprise
+process node: the "before" only means anything relative to an intervention, and
+the 120 steps no agent touches have no before. The generator writes the pair onto
+the `supports` edge — which is exactly what it describes, this agent's effect on
+this step — and refuses a claim where the cycle got *worse*, since that is almost
+always a transposition.
+
+**`cycleUnit` matters more than it looks.** Steps measured per inquiry and per
+submission share no axis, so the estate view charts *proportional* change and
+only ever puts absolute times on a shared axis within a single agent. Name the
+unit or the number cannot be read.
 
 **`openQuestions`** — Keep it populated. An agent with no open questions has either
 been fully handed over or has not been looked at.

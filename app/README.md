@@ -68,6 +68,18 @@ Two distinctions are deliberate:
 An agent's `health` is derived from its manifest by rule, never authored: one carrying a critical
 finding — no technical owner, or GxP production without completed validation — cannot render green.
 
+### Charts
+
+There are two, and the difference between them is the point. At estate level the steps are measured
+in seven different units — per case, per batch, per submission, per inquiry — so their absolute times
+share no axis and the chart shows **proportional** change on a fixed 0–100% scale. On a single agent,
+where the unit is usually constant, a before/after dumbbell on a shared **absolute** axis is honest
+and more informative.
+
+Both follow the same rule as the rest of the map: colour is never the only signal. Marks differ by
+shape as well as fill, every row prints its own value, and the table behind the picture is one
+click away with the unit named.
+
 ---
 
 ## What you can do

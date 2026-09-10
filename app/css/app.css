@@ -518,3 +518,50 @@ table.conformance tbody th { font-weight: 600; white-space: nowrap; }
 }
 
 .notice.risk { border-left-color: var(--risk); background: var(--risk-soft); color: var(--risk); }
+
+/* --- Charts ---------------------------------------------------------------
+   Before and after are two states of one thing, so they share a hue and differ
+   by fill and radius. That difference survives greyscale, forced-colours and a
+   colour-vision deficiency; the printed value beside every row means the chart
+   never depends on reading the marks at all. */
+
+.chart { margin: 0; }
+.chart-svg { width: 100%; height: auto; display: block; }
+
+.chart-legend {
+  display: flex; gap: 1.1rem; align-items: center;
+  font-size: .78rem; color: var(--text-muted); margin-bottom: .3rem;
+}
+.chart-key { display: inline-flex; align-items: center; gap: .35rem; }
+
+.chart-grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 4; }
+.chart-tick { fill: var(--text-faint); font-size: 10.5px; }
+.chart-track { stroke: var(--border); stroke-width: 1; }
+.chart-link { stroke: var(--it); stroke-width: 2; opacity: .4; }
+
+.mark-before { fill: var(--bg-raised); stroke: var(--text-faint); stroke-width: 2; }
+.mark-after { fill: var(--it); stroke: var(--bg-raised); stroke-width: 2; }
+
+.chart-label { fill: var(--text); font-size: 12px; }
+.chart-sublabel { fill: var(--text-faint); font-size: 10px; }
+.chart-value { fill: var(--text-muted); font-size: 11.5px; }
+
+.chart-caption { font-size: .78rem; color: var(--text-muted); margin: .5rem 0 0; }
+
+.chart-data { margin-top: .6rem; }
+.chart-data summary {
+  cursor: pointer; font-size: .8rem; color: var(--it);
+  padding: .2rem 0; width: max-content;
+}
+.chart-data summary:hover { text-decoration: underline; }
+.chart-data[open] summary { margin-bottom: .4rem; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .chart-row .mark-after { transition: r .12s ease; }
+}
+.chart-row:hover .mark-after { r: 6.5; }
+.chart-row:hover .chart-link { opacity: .75; }
+
+.chart-bar-track { fill: var(--bg-sunken); }
+.chart-bar { fill: var(--it); }
+.chart-row:hover .chart-bar { fill: var(--business); }

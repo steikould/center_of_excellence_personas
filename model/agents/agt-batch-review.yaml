@@ -38,7 +38,15 @@ replaces:
 business:
   domain: bd-manufacture-ensure-quality
   capabilities: [cap-quality-assurance-compliance]
-  processes: [proc-batch-release-disposition, proc-deviation-management]
+  processes:
+    - id: proc-batch-release-disposition
+      cycleBeforeMinutes: 600
+      cycleAfterMinutes: 125
+      cycleUnit: "per batch"
+    - id: proc-deviation-management
+      cycleBeforeMinutes: 330
+      cycleAfterMinutes: 95
+      cycleUnit: "per deviation"
 
 model:
   primary: "GPT-class frontier model via Azure OpenAI, private endpoint"

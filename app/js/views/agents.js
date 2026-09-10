@@ -7,9 +7,10 @@
  */
 import { tpl, raw, plural, truncate } from "../util.js";
 import { rows, section, statTile, emptyState, nodeHeader } from "./common.js";
+import { dumbbell, reductionBars } from "./chart.js";
 import {
   coverageBadge, severityBadge, confidenceBadge, frameworkBadge,
-  healthBadge, usd, seconds, FRAMEWORK_LABEL, TYPE_LABEL,
+  healthBadge, usd, seconds, duration, FRAMEWORK_LABEL, TYPE_LABEL,
 } from "../format.js";
 
 const SIGNALS = [
@@ -61,6 +62,8 @@ export function renderAgentEstate(model) {
     ${section("What needs a decision", e.criticalFindings.length + e.seriousFindings.length,
       renderFindings([...e.criticalFindings, ...e.seriousFindings]))}
 
+    ${cycleSection(model)}
+
     ${section("Agents", e.agents.length, tpl`
       <div class="agent-grid">${e.agents.map((a) => agentCard(model, a))}</div>`)}
 
@@ -80,6 +83,31 @@ export function renderAgentEstate(model) {
       which is what makes that claim checkable rather than merely asserted.</p>
       ${rows(model, e.controlPlane)}`)}
   `;
+}
+
+/** Every business step a machine took over, and what happened to its cycle
+ *  time. The one picture at estate level: sorted by reduction, so the biggest
+ *  claim is also the one a reader will check first. */
+function cycleSection(model) {
+  const impact = model.cycleImpact();
+  if (!impact.length) return raw("");
+  const items = impact.map((d) => ({
+    label: d.step.name, sub: d.agent.props.shortName || d.agent.name,
+    pct: d.reductionPct, detail: `${duration(d.before)} → ${duration(d.after)}`,
+    before: d.before, after: d.after, unit: d.unit,
+  }));
+  const worst = impact[impact.length - 1];
+  // Name the units actually present rather than a fixed example list, so the
+  // sentence cannot drift from the data behind it.
+  const units = [...new Set(impact.map((d) => d.unit).filter(Boolean))].sort();
+  return section("What it did to the clock", impact.length, tpl`
+    <p class="lede">Proportional change in cycle time, per unit of work. These steps are measured in
+    ${units.length} different units — ${units.join(", ")} — so their absolute times share no axis and
+    only the proportion is comparable. The absolute figures are printed beside each bar, and the table
+    names the unit for each.</p>
+    ${reductionBars(items, {
+      caption: `Smallest reduction: ${worst.step.name} at ${worst.reductionPct}% (${duration(worst.before)} → ${duration(worst.after)} ${worst.unit}). These are the agents' own claims, at the same seed confidence as the rest of the manifest — the thing to go and measure, not a measurement.`,
+    })}`);
 }
 
 function renderFindings(findings) {
@@ -181,6 +209,8 @@ export function renderAgent(model, a) {
     ${section("Business steps it performs", supports.length,
       supports.length ? rows(model, supports) : emptyState("This agent is not linked to any business step."))}
 
+    ${agentCycleChart(model, a)}
+
     ${section("Accountability", null, tpl`
       <dl class="detail-list">
         <dt>Business owner</dt><dd>${p.businessOwner}</dd>
@@ -266,6 +296,17 @@ export function renderAgent(model, a) {
       ${(p.openQuestions || []).length ? tpl`<h3>Questions for the build team</h3>
         <ul class="plain-list">${(p.openQuestions || []).map((q) => tpl`<li>${q}</li>`)}</ul>` : ""}`) : ""}
   `;
+}
+
+function agentCycleChart(model, a) {
+  const impact = model.cycleImpact(a.id);
+  if (!impact.length) return raw("");
+  const items = impact.map((d) => ({
+    label: d.step.name, sub: d.unit, before: d.before, after: d.after, unit: d.unit,
+  }));
+  return section("What it did to the clock", null, tpl`
+    <p class="lede">This agent's own claim about the steps it took over, at the manifest's confidence.</p>
+    ${dumbbell(items, { tableHeading: "Show the numbers behind this" })}`);
 }
 
 /* --------------------------------------------------------- runtime panel */

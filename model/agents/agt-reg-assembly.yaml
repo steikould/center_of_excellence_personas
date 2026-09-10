@@ -38,7 +38,15 @@ replaces:
 business:
   domain: bd-manage-clinical-regulatory-affairs
   capabilities: [cap-regulatory-submission-management]
-  processes: [proc-dossier-assembly, proc-submission-tracking]
+  processes:
+    - id: proc-dossier-assembly
+      cycleBeforeMinutes: 2400
+      cycleAfterMinutes: 180
+      cycleUnit: "per submission"
+    - id: proc-submission-tracking
+      cycleBeforeMinutes: 480
+      cycleAfterMinutes: 90
+      cycleUnit: "per submission"
 
 model:
   primary: "GPT-class frontier model via Azure OpenAI, private endpoint"

@@ -186,6 +186,14 @@ export function usd(value) {
   return `${n < 0 ? "-" : ""}$${Math.round(abs)}`;
 }
 
+/** Minutes rendered at whatever unit reads naturally at that magnitude. */
+export function duration(minutes) {
+  const m = Number(minutes) || 0;
+  if (m < 60) return `${Math.round(m)} min`;
+  if (m < 60 * 16) return `${(m / 60).toFixed(m < 600 ? 1 : 0)} hr`;
+  return `${(m / (60 * 8)).toFixed(1)} days`;
+}
+
 /** Latency in whatever unit keeps it a two-digit number. */
 export function seconds(value) {
   const s = Number(value) || 0;
